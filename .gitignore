@@ -1,0 +1,52 @@
+.env
+.venv
+__pycache__/
+new_project/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Runner.xcuserdata/
+ios/Podfile.lock
+android/.gradle/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/local.properties
+android/.idea/
+
+# Visual Studio Code settings
+.vscode/
+.history/
+
+# MacOS specific
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/Flutter/Flutter.framework
+macos/.symlinks/
+macos/.dart_tool/
+
+# Web specific
+web/.dart_tool/
+web/manifest.json
+
+# Windows specific
+windows/.dart_tool/
+windows/Flutter/ephemeral/
+windows/Flutter/Flutter.framework
+
+# Other
+*.log
+*.tmp
+*.swp
+*.swo
+
+# User-specific files
+*.iml
+.idea/
+*.lock
+*.DS_Store
