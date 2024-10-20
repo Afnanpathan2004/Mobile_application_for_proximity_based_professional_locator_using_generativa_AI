@@ -1,7 +1,6 @@
 .env
 .venv
 __pycache__/
-new_project/
 .flutter-plugins
 .flutter-plugins-dependencies
 pubspec.lock

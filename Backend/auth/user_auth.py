@@ -38,10 +38,20 @@ async def authenticate_user (username : str, password : str) :
     return None
 
 # register user
-async def register_user (username : str, password : str) :
+async def register_user (username : str, password : str, dob: str, profession: str, address: str, pincode: str, contact_number: str, email: str) :
     hashed_password = hash_password(password)
+    hashed_contact = hash_password(contact_number)
+
     # user = await collection.insert_one({'username':username, 'hashed_password':hashed_password})
-    user = collection.insert_one({'username':username, 'hashed_password':hashed_password})
+    user = collection.insert_one({'username':username,
+                                'hashed_password':hashed_password,
+                                'dob': dob,
+                                'profession': profession,
+                                'address': address,
+                                'pincode': pincode,
+                                'contact_number': hashed_contact,
+                                'email': email,
+                                })
     return user
 
 

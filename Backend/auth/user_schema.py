@@ -4,6 +4,12 @@ from pydantic import BaseModel
 class UserCreate(BaseModel):
     username: str
     password: str
+    dob: str
+    profession: str
+    address: str
+    pincode: str
+    contact_number: str
+    email: str
 
 # User schema for the token response
 class Token(BaseModel):

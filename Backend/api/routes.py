@@ -14,11 +14,20 @@ router = APIRouter()
 @router.post("/register", status_code=201)
 async def register(user: UserCreate):
     # existing_user = await collection.find_one({"username": user.username})
+    # print(user)
     existing_user = collection.find_one({"username": user.username})
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
     
-    new_user = await register_user(user.username, user.password)
+    new_user = await register_user(
+        user.username,
+        user.password,
+        user.dob,
+        user.profession,
+        user.address,
+        user.pincode,
+        user.contact_number,
+        user.email,)
     return {"message": "User registered successfully"}
 
 
