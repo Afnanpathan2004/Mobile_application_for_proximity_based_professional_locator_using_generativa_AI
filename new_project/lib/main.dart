@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart'; // Import the Login screen
 import 'screens/registration_screen.dart'; // Import the Registration screen
 import 'screens/home_screen.dart'; // Import the Home screen
+import 'screens/dashboard.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,10 +21,13 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        '/': (context) => const MyHomePage(title: 'Welcome'), // Set the HomePage as the home screen
+        '/': (context) => const MyHomePage(
+            title:
+                'Welcome to Professional locator!!!'), // Set the HomePage as the home screen
         '/register': (context) => RegistrationScreen(),
         '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(), // Ensure HomeScreen is defined
+        '/home': (context) => HomeScreen(),
+        '/dashboard': (context) => Dashboard(),
       },
     );
   }
@@ -47,7 +51,8 @@ class MyHomePage extends StatelessWidget {
             const Text('Welcome to the Professional Locator!'),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/register'); // Navigate to registration
+                Navigator.pushNamed(
+                    context, '/register'); // Navigate to registration
               },
               child: const Text('Register'),
             ),

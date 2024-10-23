@@ -15,36 +15,50 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _professionController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _pincodeController = TextEditingController();
-  final TextEditingController _contactNumberController =
-      TextEditingController();
+  final TextEditingController _contactNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final ApiService _apiService = ApiService(); // Initialize ApiService
 
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+
   void _registerUser() async {
-    try {
-      // ignore: unused_local_variable
-      final response = await _apiService.registerUser(
-        username: _usernameController.text,
-        password: _passwordController.text,
-        dob: _dobController.text,
-        profession: _professionController.text,
-        address: _addressController.text,
-        pincode: _pincodeController.text,
-        contactNumber: _contactNumberController.text,
-        email: _emailController.text,
-      );
-      // Handle success, show success message
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration successful!')),
-      );
-    } catch (e) {
-      // Handle error, show error message
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+      try {
+        setState(() {
+          _isLoading = false;
+        });
+        // ignore: unused_local_variable
+        final response = await _apiService.registerUser(
+          username: _usernameController.text,
+          password: _passwordController.text,
+          dob: _dobController.text,
+          profession: _professionController.text,
+          address: _addressController.text,
+          pincode: _pincodeController.text,
+          contactNumber: _contactNumberController.text,
+          email: _emailController.text,
+        );
+        // Handle success, show success message
+        // ignore: use_build_context_synchronously
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration successful!')),
+        );
+        Navigator.pushReplacementNamed(context, '/login');
+      } catch (e) {
+        // Handle error, show error message
+        // ignore: use_build_context_synchronously
+        setState(() {
+          _isLoading = false; // Hide loading indicator
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
 
@@ -58,6 +72,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey, // Add form key for validation
         child: Column(
           children: <Widget>[
             const SizedBox(height: 20),
@@ -77,7 +93,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 controller: _contactNumberController),
             _buildTextField('Email',
                 isEmail: true, controller: _emailController),
-            const SizedBox(height: 20),
+            const SizedBox(height: 20), 
+            _isLoading ? CircularProgressIndicator(): 
             ElevatedButton(
               onPressed: _registerUser, // Call the registration function
               style: ElevatedButton.styleFrom(
@@ -93,7 +110,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 style: TextStyle(fontSize: 18),
               ),
             ),
-          ],
+            const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/login');
+                },
+                  child: Text('Already have an account? Login here'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -103,7 +128,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       {bool isEmail = false, TextEditingController? controller}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: TextField(
+      child: TextFormField(
         controller: controller, // Use the controller
         decoration: InputDecoration(
           labelText: label,
@@ -118,7 +143,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           labelStyle: const TextStyle(color: Colors.blueAccent),
         ),
         keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
-      ),
-    );
-  }
+      validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Please enter your $label';
+          }
+          return null;
+        },
+    ),
+  );
+}
 }
