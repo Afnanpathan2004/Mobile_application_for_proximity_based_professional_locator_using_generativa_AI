@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Body
 from fastapi.security import OAuth2PasswordRequestForm
 from auth.user_auth import register_user, login_for_access_token, collection, ACCESS_TOKEN_EXPIRE_MINUTES
 from auth.jwt import verify_token, Secret_key, algo
@@ -27,7 +27,9 @@ async def register(user: UserCreate):
         user.address,
         user.pincode,
         user.contact_number,
-        user.email,)
+        user.email,
+        user.latitude,
+        user.longitude,)
     return {"message": "User registered successfully"}
 
 
@@ -99,3 +101,10 @@ async def logout(response: Response):
     response.delete_cookie("access_token")
     
     return {"message": "Successfully logged out"}
+
+
+# Search 
+@router.post("/search")
+async def search(query:str = Body(...)):
+    print ('Fastapi vala', query)
+    return{"message : Query recieved MF!!!"}

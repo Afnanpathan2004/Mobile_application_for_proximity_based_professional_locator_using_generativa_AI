@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:new_project/services/api_service.dart'; // Import your API service
+import 'package:geolocator/geolocator.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
@@ -18,10 +19,44 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final TextEditingController _contactNumberController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _latitudeController = TextEditingController();
+  final TextEditingController _longitudeController = TextEditingController();
   final ApiService _apiService = ApiService(); // Initialize ApiService
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+
+  // Function to get the current location
+  Future<void> _getLocation() async {
+    // Check if the location service is enabled
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      // If location services are not enabled, show a message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location services are disabled')),
+      );
+      return;
+    }
+
+    // Request location permission
+    LocationPermission permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      // If permission is denied, show a message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location permission denied')),
+      );
+      return;
+    }
+
+    // Get the current position
+    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+    // Update the controllers with the latitude and longitude
+    _latitudeController.text = position.latitude.toString();
+    _longitudeController.text = position.longitude.toString();
+  }
+
+
 
   void _registerUser() async {
     if (_formKey.currentState!.validate()) {
@@ -42,11 +77,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           pincode: _pincodeController.text,
           contactNumber: _contactNumberController.text,
           email: _emailController.text,
+          latitude: _latitudeController.text, // Added latitude
+          longitude: _longitudeController.text, // Added longitude
         );
         // Handle success, show success message
         // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration successful!')),
+          const SnackBar(content: Text('Registration successful!')),
         );
         Navigator.pushReplacementNamed(context, '/login');
       } catch (e) {
@@ -63,6 +100,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Get the current location when the screen is initialized
+    _getLocation();
+  }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -74,48 +117,48 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey, // Add form key for validation
-        child: Column(
-          children: <Widget>[
-            const SizedBox(height: 20),
-            Text(
-              'Create an Account',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            _buildTextField('User Name', controller: _usernameController),
-            _buildTextField('Password', controller: _passwordController),
-            _buildTextField('Date of Birth', controller: _dobController),
-            _buildTextField('Profession', controller: _professionController),
-            _buildTextField('Residential Address',
-                controller: _addressController),
-            _buildTextField('Pincode', controller: _pincodeController),
-            _buildTextField('Contact Number',
-                controller: _contactNumberController),
-            _buildTextField('Email',
-                isEmail: true, controller: _emailController),
-            const SizedBox(height: 20), 
-            _isLoading ? CircularProgressIndicator(): 
-            ElevatedButton(
-              onPressed: _registerUser, // Call the registration function
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: 20),
+              const Text(
+                'Create an Account',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              child: const Text(
-                'Register',
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-            const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/login');
+              const SizedBox(height: 20),
+              _buildTextField('User Name', controller: _usernameController),
+              _buildTextField('Password', controller: _passwordController),
+              _buildTextField('Date of Birth', controller: _dobController),
+              _buildTextField('Profession', controller: _professionController),
+              _buildTextField('Residential Address', controller: _addressController),
+              _buildTextField('Pincode', controller: _pincodeController),
+              _buildTextField('Contact Number', controller: _contactNumberController),
+              _buildTextField('Email', isEmail: true, controller: _emailController),
+              _buildTextField('Latitude', controller: _latitudeController, isReadOnly: true),
+              _buildTextField('Longitude', controller: _longitudeController, isReadOnly: true),
+              const SizedBox(height: 20),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _registerUser, // Call the registration function
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 15, horizontal: 30),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text(
+                        'Register',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacementNamed(context, '/login');
                 },
-                  child: Text('Already have an account? Login here'),
+                child: const Text('Already have an account? Login here'),
               ),
             ],
           ),
@@ -125,7 +168,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   }
 
   Widget _buildTextField(String label,
-      {bool isEmail = false, TextEditingController? controller}) {
+      {bool isEmail = false, bool isReadOnly = false, TextEditingController? controller}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: TextFormField(
@@ -142,14 +185,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           ),
           labelStyle: const TextStyle(color: Colors.blueAccent),
         ),
+        readOnly: isReadOnly,
         keyboardType: isEmail ? TextInputType.emailAddress : TextInputType.text,
-      validator: (value) {
+        validator: (value) {
           if (value == null || value.isEmpty) {
             return 'Please enter your $label';
           }
           return null;
         },
-    ),
-  );
-}
+      ),
+    );
+  }
 }

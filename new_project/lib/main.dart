@@ -24,9 +24,9 @@ class MyApp extends StatelessWidget {
         '/': (context) => const MyHomePage(
             title:
                 'Welcome to Professional locator!!!'), // Set the HomePage as the home screen
-        '/register': (context) => RegistrationScreen(),
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
+        '/register': (context) => const RegistrationScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
         '/dashboard': (context) => Dashboard(),
       },
     );

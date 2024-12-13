@@ -38,7 +38,7 @@ async def authenticate_user (username : str, password : str) :
     return None
 
 # register user
-async def register_user (username : str, password : str, dob: str, profession: str, address: str, pincode: str, contact_number: str, email: str) :
+async def register_user (username : str, password : str, dob: str, profession: str, address: str, pincode: str, contact_number: str, email: str, latitude: str, longitude: str) :
     hashed_password = hash_password(password)
     hashed_contact = hash_password(contact_number)
 
@@ -51,6 +51,8 @@ async def register_user (username : str, password : str, dob: str, profession: s
                                 'pincode': pincode,
                                 'contact_number': hashed_contact,
                                 'email': email,
+                                'latitude': latitude,
+                                'longitude': longitude,
                                 })
     return user
 

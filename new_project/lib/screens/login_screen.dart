@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:new_project/services/api_service.dart'; // Import your API service
-import 'package:new_project/screens/dashboard.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login Successsful!')),
         );
-        Navigator.pushReplacementNamed(context, '/login');// Redirect to dashboard
+        Navigator.pushReplacementNamed(context, '/dashboard'); // Redirect to dashboard
       } else {
         // Handle failed login, e.g. show an error message
         ScaffoldMessenger.of(context).showSnackBar(
@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: <Widget>[
             const SizedBox(height: 20),
-            Text(
+            const Text(
               'Welcome Back',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),

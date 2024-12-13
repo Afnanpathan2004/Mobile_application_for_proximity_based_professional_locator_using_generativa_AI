@@ -10,6 +10,8 @@ class UserCreate(BaseModel):
     pincode: str
     contact_number: str
     email: str
+    latitude : str
+    longitude : str
 
 # User schema for the token response
 class Token(BaseModel):
