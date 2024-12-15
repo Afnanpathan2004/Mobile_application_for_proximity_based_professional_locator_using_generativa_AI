@@ -1,6 +1,6 @@
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, Response
-from pymongo import MongoClient
+from pymongo import MongoClient, GEOSPHERE
 from fastapi.security import OAuth2PasswordRequestForm
 from .jwt import create_access_token
 from datetime import timedelta
@@ -16,20 +16,25 @@ REFRESH_TOKEN_EXPIRE_MINUTES = 525600
 client = MongoClient(os.getenv('mongo'))
 db = client["Mini_Project"]
 collection = db["User_Auth"]
+collection.create_index([("location", "2dsphere")])
 
 
 # hashing password
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password : str):
+    password = password.lower()
     return pwd_context.hash(password)
 
 # verifying passwords
 def verify_password(plain_password:str, hashed_password:str):
+    plain_password = plain_password.lower()
     return pwd_context.verify(plain_password, hashed_password)
 
 # authenticate user
 async def authenticate_user (username : str, password : str) :
+    username = username.lower()
+    password = password.lower()
     # user = await collection.find_one({'username':username})
     user = collection.find_one({'username':username})
     # print(user)
@@ -41,7 +46,13 @@ async def authenticate_user (username : str, password : str) :
 async def register_user (username : str, password : str, dob: str, profession: str, address: str, pincode: str, contact_number: str, email: str, latitude: str, longitude: str) :
     hashed_password = hash_password(password)
     hashed_contact = hash_password(contact_number)
-
+    lat = float(latitude)
+    lon = float(longitude)
+    username = username.lower()
+    password = password.lower()
+    profession = profession.lower()
+    address = address.lower()
+    email = email.lower()
     # user = await collection.insert_one({'username':username, 'hashed_password':hashed_password})
     user = collection.insert_one({'username':username,
                                 'hashed_password':hashed_password,
@@ -51,8 +62,10 @@ async def register_user (username : str, password : str, dob: str, profession: s
                                 'pincode': pincode,
                                 'contact_number': hashed_contact,
                                 'email': email,
-                                'latitude': latitude,
-                                'longitude': longitude,
+                                'location': {
+                                    "type": "Point",
+                                    "coordinates": [lon, lat]  
+                                            }
                                 })
     return user
 

@@ -105,6 +105,72 @@ async def logout(response: Response):
 
 # Search 
 @router.post("/search")
-async def search(query:str = Body(...)):
-    print ('Fastapi vala', query)
-    return{"message : Query recieved MF!!!"}
+async def search(response:Response, query:str = Body(...), access_token: str = Cookie(None)):
+    query = query.lower()
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+    
+    # Extract user's current location (latitude, longitude)
+    user_location = user.get("location")
+    if not user_location:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User location not found",
+        )
+    
+    # MongoDB query to search for professionals of the given profession near the current user
+    search_results = collection.find(
+        {
+            "profession": query,  
+            "location": {
+                "$nearSphere": {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": [user_location["coordinates"][0], user_location["coordinates"][1]]  
+                    },
+                    "$maxDistance": 5000  
+                }
+            }
+        }
+    )
+    
+# Collect and return the search results
+    results = []
+    for result in search_results:
+        results.append({
+            "username": result["username"],
+            "profession": result["profession"],
+            "location": result["location"],
+            "address": result["address"],
+            "contact_number": result["contact_number"],
+        })
+    
+    return {"message": "Search results", "data": results}
