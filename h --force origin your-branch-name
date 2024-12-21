@@ -1,0 +1,92 @@
+[33mcommit 512d67e4f8ffe0992133e0028ccccb5522924a5f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfrontend[m[33m, [m[1;31morigin/frontend[m[33m)[m
+Merge: 4794d2d 2e72a64
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Tue Dec 10 15:41:25 2024 +0530
+
+    added
+
+[33mcommit 2e72a64f91edac3f4bc991b6d10a2dd54c90e2f6[m
+Author: Ayush Mayekar <147014944+AyushMayekar@users.noreply.github.com>
+Date:   Wed Oct 23 12:45:53 2024 +0530
+
+    Initial Code Contribution (#1)
+    
+    * User Auth Backend Done!!
+    
+    * User auth done
+    
+    * Dashboard added
+
+[33mcommit 4794d2dd781cd83efee27fed2e8106bc778024fe[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Sun Oct 20 22:48:22 2024 +0530
+
+    added main page
+
+[33mcommit c45a811c4a130ed06b755bc2e59f8ede71dd7c25[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Sun Oct 20 14:55:00 2024 +0530
+
+    frontend backend integeration
+
+[33mcommit 2e71de5b358bf18fb694f82bc5446b9a9b8d0c4b[m
+Merge: 38e60af 04223cb
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Sun Oct 20 10:52:45 2024 +0530
+
+    mergeing
+
+[33mcommit 04223cb66bb5c7a5837eee823cdc878d325cff53[m
+Author: AyushMayekar <ayush.224947101@vcet.edu.in>
+Date:   Sat Oct 19 17:57:48 2024 +0530
+
+    User Auth Backend Done!!
+
+[33mcommit 38e60afd06753e1ce5b390a3479b1268df89b6b0[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Sat Oct 19 15:48:20 2024 +0530
+
+    adding more questions to registeration page
+
+[33mcommit 7a2e96b0f1a798ab50d8f24227e21ecf16bf1167[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Thu Oct 17 01:48:11 2024 +0530
+
+    just the frontend part
+
+[33mcommit eccdb9aafbbb3376c61b3883c10e453503e924f9[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Thu Oct 17 01:14:35 2024 +0530
+
+    trying 2 solve errors
+
+[33mcommit 865f46998e759362cc44f91488fb9d13b2ca55a9[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Thu Oct 10 12:15:57 2024 +0530
+
+    debugging errors
+
+[33mcommit 2d92884e47a7591e961f87feabc6594f69b0c465[m
+Merge: 4522fba 0684886
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Thu Oct 10 01:12:34 2024 +0530
+
+    Resolved merge conflicts
+
+[33mcommit 4522fbaceb4d46fb7ca1608107eae210a8101f8a[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Thu Oct 10 01:09:23 2024 +0530
+
+    creating login and registeration page with user autherization using gmail and password
+
+[33mcommit 0684886200af4c53a8f736627a0e9609c0243644[m
+Author: Afnanpathan2004 <afnan.225067109@vcet.edu.in>
+Date:   Wed Oct 9 18:12:46 2024 +0530
+
+    created basic flutter and dart template
+
+[33mcommit 53613db94225da52980b9d4fb6f11ca827dfd239[m
+Author: Afnan Pathan <144874907+Afnanpathan2004@users.noreply.github.com>
+Date:   Tue Oct 8 17:02:34 2024 +0530
+
+    Initial commit

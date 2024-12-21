@@ -3,6 +3,9 @@ import 'screens/login_screen.dart'; // Import the Login screen
 import 'screens/registration_screen.dart'; // Import the Registration screen
 import 'screens/home_screen.dart'; // Import the Home screen
 import 'screens/dashboard.dart';
+import 'screens/chatbot_screen.dart';
+import 'screens/community_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +22,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/',
+      initialRoute: '/chatbot',
       routes: {
         '/': (context) => const MyHomePage(
             title:
@@ -27,7 +30,10 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegistrationScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        '/dashboard': (context) => Dashboard(),
+        '/dashboard': (context) => const Dashboard(),
+        '/chatbot': (context) => const ChatbotScreen(),
+        '/community': (context) => const CommunityScreen(),
+        '/profile': (context) => const ProfileScreen(),
       },
     );
   }
