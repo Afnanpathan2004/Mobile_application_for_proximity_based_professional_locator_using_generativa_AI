@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:new_project/services/api_service.dart'; // Import your API service
 import 'package:geolocator/geolocator.dart';
@@ -26,15 +28,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  // Function to get the current location
+  // Function to get the current location with updated settings
   Future<void> _getLocation() async {
     // Check if the location service is enabled
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       // If location services are not enabled, show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Location services are disabled')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location services are disabled')),
+        );
+      }
       return;
     }
 
@@ -42,21 +46,39 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied) {
       // If permission is denied, show a message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Location permission denied')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permission denied')),
+        );
+      }
       return;
     }
 
-    // Get the current position
-    Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    // Create LocationSettings for Android and iOS with high accuracy
+    LocationSettings locationSettings = const LocationSettings(
+      accuracy: LocationAccuracy.high, // Desired accuracy
+      distanceFilter: 100, // Minimum distance (in meters) before an update is triggered
+    );
 
-    // Update the controllers with the latitude and longitude
-    _latitudeController.text = position.latitude.toString();
-    _longitudeController.text = position.longitude.toString();
+    try {
+      // Get the current position using the updated location settings
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: locationSettings,
+      );
+
+      // Update the controllers with the latitude and longitude
+      if (mounted) {
+        _latitudeController.text = position.latitude.toString();
+        _longitudeController.text = position.longitude.toString();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error getting location: $e')),
+        );
+      }
+    }
   }
-
-
 
   void _registerUser() async {
     if (_formKey.currentState!.validate()) {
@@ -64,10 +86,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         _isLoading = true;
       });
       try {
-        setState(() {
-          _isLoading = false;
-        });
-        // ignore: unused_local_variable
         final response = await _apiService.registerUser(
           username: _usernameController.text,
           password: _passwordController.text,
@@ -80,21 +98,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           latitude: _latitudeController.text, // Added latitude
           longitude: _longitudeController.text, // Added longitude
         );
-        // Handle success, show success message
-        // ignore: use_build_context_synchronously
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful!')),
-        );
-        Navigator.pushReplacementNamed(context, '/login');
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+
+          // Handle success, show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful!')),
+          );
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       } catch (e) {
-        // Handle error, show error message
-        // ignore: use_build_context_synchronously
-        setState(() {
-          _isLoading = false; // Hide loading indicator
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        if (mounted) {
+          setState(() {
+            _isLoading = false; // Hide loading indicator
+          });
+
+          // Handle error, show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
       }
     }
   }
@@ -105,6 +131,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     // Get the current location when the screen is initialized
     _getLocation();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

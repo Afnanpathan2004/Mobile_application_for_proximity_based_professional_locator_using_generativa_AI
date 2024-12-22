@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -7,7 +8,9 @@ class ApiService {
 
 // Search Functionality
   static Future<dynamic> searchProfessionals(String query) async {
-    print('api service vala : $query');
+    if (kDebugMode) {
+      print('api service vala : $query');
+    }
     final Uri url = Uri.parse('$baseUrl/search'); // Endpoint for search
 
     try {
@@ -23,7 +26,7 @@ class ApiService {
         throw Exception('Failed to search: ${response.statusCode}');
       }
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 

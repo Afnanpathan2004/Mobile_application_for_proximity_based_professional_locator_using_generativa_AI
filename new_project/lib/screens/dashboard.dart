@@ -1,20 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:new_project/services/api_service.dart';
-
-class Profession {
-  final String name;
-  final IconData icon;
-
-  Profession({required this.name, required this.icon});
-}
-
-final List<Profession> professions = [
-  Profession(name: 'Plumber', icon: Icons.plumbing),
-  Profession(name: 'Electrician', icon: Icons.electrical_services),
-  Profession(name: 'Carpenter', icon: Icons.handyman),
-  Profession(name: 'Mechanic', icon: Icons.car_repair),
-  Profession(name: 'Painter', icon: Icons.format_paint),
-];
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -24,27 +9,44 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
+  // Controller to manage input from the search bar
   final TextEditingController _searchController = TextEditingController();
 
-  void _onSearch() async {
-    String query = _searchController.text.trim();
-    if (query.isNotEmpty) {
-      try {
-        final response = await ApiService.searchProfessionals(query);
-        print("Search response: $response");
-      } catch (e) {
-        print("Error searching: $e");
-      }
-    }
-  }
+  // List of professions
+  final List<String> professions = [
+    'Doctor', 'Plumber', 'Electrician', 'Carpenter', 'Teacher',
+    'Mechanic', 'Driver', 'Gardener', 'Painter', 'Chef',
+    'Nurse', 'Software Developer', 'Data Scientist', 'Accountant', 'Architect',
+    'Photographer', 'Artist', 'Dentist', 'Lawyer', 'Engineer',
+    'Mason', 'Tailor', 'Cleaner', 'Barber', 'Beautician',
+    'Farmer', 'Veterinarian', 'Pharmacist', 'Therapist', 'Librarian',
+    'Security Guard', 'Translator', 'Tutor', 'Fitness Trainer', 'Yoga Instructor',
+    'Dietitian', 'Social Worker', 'Consultant', 'Event Planner', 'Real Estate Agent',
+    'Insurance Agent', 'Travel Agent', 'Hotel Manager', 'Bartender', 'Waiter',
+    'Courier', 'Delivery Driver', 'Pilot', 'Flight Attendant', 'Researcher',
+    'Scientist', 'Biologist', 'Chemist', 'Physicist', 'Geologist',
+    'Astronomer', 'Economist', 'Marketing Specialist', 'Salesperson', 'Journalist',
+    'Editor', 'Publisher', 'Actor', 'Musician', 'Singer',
+    'Dancer', 'Film Director', 'Producer', 'Screenwriter', 'IT Technician',
+    'Network Administrator', 'Cybersecurity Specialist', 'Mobile App Developer', 'Game Developer', 'UI/UX Designer',
+    'Graphic Designer', 'Interior Designer', 'Fashion Designer', 'Model', 'Choreographer',
+    'Scientist', 'Anthropologist', 'Historian', 'Archaeologist', 'Psychologist',
+    'Psychiatrist', 'Counselor', 'Statistician', 'Surveyor', 'Urban Planner',
+    'Civil Engineer', 'Electrical Engineer', 'Mechanical Engineer', 'Chemical Engineer', 'Biomedical Engineer',
+    'Aerospace Engineer', 'Marine Engineer', 'Environmental Scientist', 'Wildlife Biologist', 'Forester'
+  ];
 
-  void _onProfessionSelected(String profession) async {
-    print('Selected profession: $profession');
-    try {
-      final response = await ApiService.searchProfessionals(profession);
-      print("Profession search response: $response");
-    } catch (e) {
-      print("Error searching for profession: $e");
+  // Function to handle search and send to backend
+  void _onSearch() async {
+    String query = _searchController.text.trim(); // Get user input
+    if (kDebugMode) {
+      print('Search query: $query');
+    }
+    if (query.isNotEmpty) {
+      // Perform search operation (API integration can be added here)
+      if (kDebugMode) {
+        print("Searching for: $query");
+      }
     }
   }
 
@@ -79,17 +81,23 @@ class _DashboardState extends State<Dashboard> {
             ListTile(
               leading: const Icon(Icons.chat),
               title: const Text('Chatbot'),
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, '/chatbot');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.group),
               title: const Text('Community'),
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, '/community');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Profile'),
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, '/profile');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.info),
@@ -105,35 +113,40 @@ class _DashboardState extends State<Dashboard> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(8.0),
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            mainAxisSpacing: 8.0,
+            crossAxisCount: 5, // Five cards per row
             crossAxisSpacing: 8.0,
-            childAspectRatio: 1.0,
+            mainAxisSpacing: 8.0,
+            childAspectRatio: 2.0, // Adjusted for smaller cards
           ),
           itemCount: professions.length,
           itemBuilder: (context, index) {
-            final profession = professions[index];
             return GestureDetector(
-              onTap: () => _onProfessionSelected(profession.name),
+              onTap: () {
+                // Handle card tap
+                if (kDebugMode) {
+                  print('Tapped on: ${professions[index]}');
+                }
+                // Navigate to the details page with the profession name
+              },
               child: Card(
+                color: Colors.blueAccent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10.0),
                 ),
-                elevation: 4.0,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(profession.icon, size: 40, color: Colors.blue),
-                    const SizedBox(height: 10),
-                    Text(
-                      profession.name,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                elevation: 4,
+                child: Center(
+                  child: Text(
+                    professions[index],
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
+                  ),
                 ),
               ),
             );

@@ -6,6 +6,7 @@ import 'screens/dashboard.dart';
 import 'screens/chatbot_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/aboutus_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/chatbot',
+      initialRoute: '/dashboard',
       routes: {
         '/': (context) => const MyHomePage(
             title:
@@ -34,6 +35,8 @@ class MyApp extends StatelessWidget {
         '/chatbot': (context) => const ChatbotScreen(),
         '/community': (context) => const CommunityScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/about_us': (context) => const AboutUs(),
+
       },
     );
   }
