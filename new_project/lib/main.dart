@@ -3,6 +3,10 @@ import 'screens/login_screen.dart'; // Import the Login screen
 import 'screens/registration_screen.dart'; // Import the Registration screen
 import 'screens/home_screen.dart'; // Import the Home screen
 import 'screens/dashboard.dart';
+import 'screens/aboutus_screen.dart';
+import 'screens/chatbot_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/community_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,7 +31,11 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegistrationScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
-        '/dashboard': (context) => Dashboard(),
+        '/dashboard': (context) => const Dashboard(),
+        '/aboutus': (context) => const AboutUs(),
+        '/chatbot': (context) => const ChatbotScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/community': (context) => const CommunityScreen(), 
       },
     );
   }
