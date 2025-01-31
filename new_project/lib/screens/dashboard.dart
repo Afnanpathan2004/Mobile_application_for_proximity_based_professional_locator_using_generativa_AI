@@ -1,5 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
+=======
+import 'package:new_project/screens/aboutus_screen.dart';
+import 'package:new_project/screens/chatbot_screen.dart';
+import 'package:new_project/screens/community_screen.dart';
+import 'package:new_project/screens/home_screen.dart';
+import 'package:new_project/screens/profile_screen.dart';
+import 'package:new_project/services/api_service.dart';
+>>>>>>> Ayush
 
 class Dashboard extends StatefulWidget {
   const Dashboard({super.key});
@@ -39,15 +48,53 @@ class _DashboardState extends State<Dashboard> {
   // Function to handle search and send to backend
   void _onSearch() async {
     String query = _searchController.text.trim(); // Get user input
+<<<<<<< HEAD
     if (kDebugMode) {
       print('Search query: $query');
     }
+=======
+    // print('dashboard vala : $query');
+>>>>>>> Ayush
     if (query.isNotEmpty) {
       // Perform search operation (API integration can be added here)
       if (kDebugMode) {
         print("Searching for: $query");
       }
     }
+  }
+
+  // Function to navigate to the community
+  void _navigateToCommunity(BuildContext context) async {
+    try {
+      final response = await ApiService.getCommunityPosts();
+      if (response) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CommunityScreen()),
+        );
+      } else {
+        _showErrorDialog("Access Denied", "You must be logged in to access the community.");
+      }
+    } catch (e) {
+      _showErrorDialog("Error", "Failed to load community. Please try again.");
+    }
+  }
+
+// Function to show error dialog
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -82,33 +129,69 @@ class _DashboardState extends State<Dashboard> {
               leading: const Icon(Icons.chat),
               title: const Text('Chatbot'),
               onTap: () {
+<<<<<<< HEAD
                 Navigator.pushNamed(context, '/chatbot');
+=======
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+                );
+>>>>>>> Ayush
               },
             ),
             ListTile(
               leading: const Icon(Icons.group),
               title: const Text('Community'),
+<<<<<<< HEAD
               onTap: () {
                 Navigator.pushNamed(context, '/community');
               },
+=======
+              onTap: () 
+                => _navigateToCommunity(context),
+>>>>>>> Ayush
             ),
             ListTile(
               leading: const Icon(Icons.person),
               title: const Text('Profile'),
               onTap: () {
+<<<<<<< HEAD
                 Navigator.pushNamed(context, '/profile');
+=======
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                );
+>>>>>>> Ayush
               },
             ),
             ListTile(
               leading: const Icon(Icons.info),
               title: const Text('About Us'),
+<<<<<<< HEAD
               onTap: () { Navigator.pushNamed(context, '/about_us');
+=======
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutUs()),
+                );
+>>>>>>> Ayush
               },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
+<<<<<<< HEAD
               onTap: () {},
+=======
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const HomeScreen()),
+                );
+              },
+>>>>>>> Ayush
             ),
           ],
         ),

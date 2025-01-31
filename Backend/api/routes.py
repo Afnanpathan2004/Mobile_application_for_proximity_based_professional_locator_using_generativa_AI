@@ -2,13 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie,
 from fastapi.security import OAuth2PasswordRequestForm
 from auth.user_auth import register_user, login_for_access_token, collection, ACCESS_TOKEN_EXPIRE_MINUTES
 from auth.jwt import verify_token, Secret_key, algo
-from auth.user_schema import UserCreate, Token
+from auth.user_schema import UserCreate, Token, Message
+from Community.community import message_analysis, display_messages, update_DB
 from auth.jwt import oauth2, create_access_token
 from jose import JWTError, jwt
 from datetime import timedelta
+from pymongo import MongoClient
+from datetime import datetime, timedelta
+import os
 
 router = APIRouter()
 
+# connecting Mongo
+client = MongoClient(os.getenv('mongo'))
+db = client["Mini_Project"]
+community_coll = db["Community"]
 
 # Register a new user
 @router.post("/register", status_code=201)
@@ -174,3 +182,102 @@ async def search(response:Response, query:str = Body(...), access_token: str = C
         })
     
     return {"message": "Search results", "data": results}
+
+
+# Community Chat 
+@router.post("/community")
+async def community(response:Response, message_data: Message, access_token: str = Cookie(None) ):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+    
+    # Validate the message
+    if not message_data.message.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Message cannot be empty.",
+        )
+    sentiment = message_analysis(message_data.message)
+    # print(sentiment)
+    if sentiment == "negative":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Follow the community guidelines. Negative messages are not allowed."
+        )
+    # Store Message in MongoDB
+    message_entry = {
+        "username": username,
+        "message": message_data.message,
+        "timestamp": datetime.utcnow()
+    }
+    community_coll.insert_one(message_entry)
+    return  {"success": True, "message": message_data.message, "sentiment": sentiment}
+
+
+# Display Community Chat
+@router.get("/display_community")
+async def  community_load (response:Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception 
+    
+    # Update the Community DB
+    update_DB()
+    
+    # Display messages
+    community_dislpay_messages = display_messages()
+    return community_dislpay_messages

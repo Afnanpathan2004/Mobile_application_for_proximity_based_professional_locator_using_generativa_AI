@@ -5,6 +5,15 @@ import 'package:http/http.dart' as http;
 class ApiService {
   static const String baseUrl =
       'http://127.0.0.1:8000'; // Replace with your FastAPI URL
+  static String? sessionCookie;
+
+// Extract session token from the cookie
+  static void extractCookie(http.Response response) {
+    String? rawCookie = response.headers['set-cookie'];
+    if (rawCookie != null) {
+      sessionCookie = rawCookie.split(';')[0]; // Store only "access_token=..."
+    }
+  }
 
 // Search Functionality
   static Future<dynamic> searchProfessionals(String query) async {
@@ -84,9 +93,56 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
+      extractCookie(response); // Extract JWT from cookie and store it
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to login: ${response.body}');
+    }
+  }
+
+// Community Endpoint
+  static Future<dynamic> getCommunityPosts() async {
+    final Uri url = Uri.parse('$baseUrl/display_community');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+            'Failed to fetch community posts: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Community Fetch Error: $e');
+    }
+  }
+
+  static Future<dynamic> createCommunityPost(String content) async {
+    final Uri url = Uri.parse('$baseUrl/community');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (sessionCookie != null) 'Cookie': sessionCookie!, // Send JWT
+        },
+        body: jsonEncode({'content': content}),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to create post: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Community Post Error: $e');
     }
   }
 }

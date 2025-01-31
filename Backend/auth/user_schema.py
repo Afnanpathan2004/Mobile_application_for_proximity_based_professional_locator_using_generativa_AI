@@ -22,3 +22,7 @@ class Token(BaseModel):
 # Schema for token data (for validating and decoding tokens)
 class TokenData(BaseModel):
     username: str | None = None
+
+# Schema for the community messages
+class Message(BaseModel):
+    message: str
