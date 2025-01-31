@@ -102,7 +102,8 @@ class _DashboardState extends State<Dashboard> {
             ListTile(
               leading: const Icon(Icons.info),
               title: const Text('About Us'),
-              onTap: () {},
+              onTap: () { Navigator.pushNamed(context, '/about_us');
+              },
             ),
             ListTile(
               leading: const Icon(Icons.logout),
@@ -154,5 +155,4 @@ class _DashboardState extends State<Dashboard> {
         ),
       ),
     );
-  }
-}
+    }  }
