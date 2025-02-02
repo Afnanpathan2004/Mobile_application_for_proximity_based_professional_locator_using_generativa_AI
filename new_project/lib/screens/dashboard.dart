@@ -51,6 +51,20 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
+
+// Function to logout user 
+  void _logoutUser() async {
+    try {
+      await ApiService.logoutUser();
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } catch (e) {
+      _showErrorDialog("Error", "Failed to logout. Please try again.");
+    }
+  }
+
 // Function to show error dialog
   void _showErrorDialog(String title, String message) {
     showDialog(
@@ -137,12 +151,8 @@ class _DashboardState extends State<Dashboard> {
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text('Logout'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HomeScreen()),
-                );
-              },
+              onTap: () 
+              => _logoutUser(),
             ),
           ],
         ),

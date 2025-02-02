@@ -16,7 +16,7 @@ class ApiService {
 
 // Search Functionality
   static Future<dynamic> searchProfessionals(String query) async {
-    print('api service vala : $query');
+    // print('api service vala : $query');
     final Uri url = Uri.parse('$baseUrl/search'); // Endpoint for search
 
     try {
@@ -140,6 +140,29 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Community Post Error: $e');
+    }
+  }
+
+
+// Logout Endpoint
+  static Future<void> logoutUser() async {
+    final Uri url = Uri.parse('$baseUrl/logout'); // Logout endpoint
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        // Clear session cookie after successful logout
+        sessionCookie = null;
+        // print("Logout successful");
+      } else {
+        throw Exception('Failed to logout: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Logout Error: $e');
     }
   }
 }
