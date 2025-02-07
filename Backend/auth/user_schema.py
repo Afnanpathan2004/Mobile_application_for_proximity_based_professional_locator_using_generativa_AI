@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime 
 
 # User schema for creating a new user
 class UserCreate(BaseModel):
@@ -26,3 +27,10 @@ class TokenData(BaseModel):
 # Schema for the community messages
 class Message(BaseModel):
     message: str
+
+# Schema for storing 1-1 chat messages
+class MessageSchema(BaseModel):
+    sender: str          
+    receiver: str        
+    message: str         
+    timestamp: datetime 
