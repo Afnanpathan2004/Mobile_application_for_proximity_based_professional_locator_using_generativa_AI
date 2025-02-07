@@ -5,6 +5,7 @@ import 'package:new_project/screens/community_screen.dart';
 import 'package:new_project/screens/home_screen.dart';
 import 'package:new_project/screens/profile_screen.dart';
 import 'package:new_project/screens/professional_profile_screen.dart';
+import 'package:new_project/screens/chat_history_screen.dart';
 import 'package:new_project/services/api_service.dart';
 
 class Dashboard extends StatefulWidget {
@@ -19,14 +20,12 @@ class _DashboardState extends State<Dashboard> {
   List<dynamic> _professionals = [];
   bool _isLoading = false;
 
-  // Fetch professionals based on search query
   void _onSearch() async {
     String query = _searchController.text.trim();
     if (query.isNotEmpty) {
       setState(() => _isLoading = true);
       try {
         final response = await ApiService.searchProfessionals(query);
-        print('$response');
         setState(() {
           _professionals = response['data'] ?? [];
         });
@@ -37,7 +36,6 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  // Navigate to Community Screen
   void _navigateToCommunity(BuildContext context) async {
     try {
       final response = await ApiService.getCommunityPosts();
@@ -54,7 +52,6 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  // Show error dialog
   void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
@@ -106,6 +103,12 @@ class _DashboardState extends State<Dashboard> {
                   context, MaterialPageRoute(builder: (context) => const ChatbotScreen())),
             ),
             ListTile(
+              leading: const Icon(Icons.history),
+              title: const Text('Chat History'),
+              onTap: () => Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => const ChatHistoryScreen())),
+            ),
+            ListTile(
               leading: const Icon(Icons.group),
               title: const Text('Community'),
               onTap: () => _navigateToCommunity(context),
@@ -146,7 +149,6 @@ class _DashboardState extends State<Dashboard> {
                     var professional = _professionals[index];
                     return GestureDetector(
                       onTap: () {
-                        // Navigate to the Professional Profile screen, passing the professional data.
                         Navigator.push(
                           context,
                           MaterialPageRoute(
