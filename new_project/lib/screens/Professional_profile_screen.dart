@@ -1,10 +1,36 @@
 import 'package:flutter/material.dart';
 import 'chat_screen.dart'; // Import the Chat screen
+import 'package:new_project/services/api_service.dart';
 
 class ProfessionalProfileScreen extends StatelessWidget {
   final Map<String, dynamic> professional;
-  
+
   const ProfessionalProfileScreen({super.key, required this.professional});
+
+// Function to fetch chat history, connect to websocket and navigate to ChatScreen
+  void _handleChat(BuildContext context) async {
+    try {
+      // Step 1: Fetch chat history from FastAPI
+      final chatHistory = await ApiService.fetchChatHistory(professional['username']);
+      // debugPrint('Chat History recieved : $chatHistory');
+
+      // Step 2: Navigate to ChatScreen with necessary data
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            professional: professional,
+            chatHistory: chatHistory, // Passing history to chat screen
+          ),
+        ),
+      );
+    } catch (e) {
+      // Handle errors if API call or connection fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +56,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
             const Spacer(),
             Center(
               child: ElevatedButton(
-                onPressed: () {
-                  // Navigate to ChatScreen with this professional's info
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(professional: professional),
-                    ),
-                  );
-                },
+                onPressed: () => _handleChat(context),
                 child: const Text("Chat"),
               ),
             ),

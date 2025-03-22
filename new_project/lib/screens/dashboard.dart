@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:new_project/screens/aboutus_screen.dart';
 import 'package:new_project/screens/chatbot_screen.dart';
 import 'package:new_project/screens/community_screen.dart';
-import 'package:new_project/screens/home_screen.dart';
+import 'package:new_project/screens/login_screen.dart';
 import 'package:new_project/screens/profile_screen.dart';
 import 'package:new_project/screens/professional_profile_screen.dart';
 import 'package:new_project/screens/chat_history_screen.dart';
@@ -59,7 +59,7 @@ class _DashboardState extends State<Dashboard> {
       await ApiService.logoutUser();
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     } catch (e) {
       _showErrorDialog("Error", "Failed to logout. Please try again.");

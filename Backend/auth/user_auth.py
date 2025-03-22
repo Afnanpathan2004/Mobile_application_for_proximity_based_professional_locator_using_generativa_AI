@@ -99,4 +99,8 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
         samesite="Lax",                # Helps prevent CSRF attacks
         max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60  # Expiry in seconds
     )
-    return {"message": "User logged in successfully!"}
+    return {
+        "message": "User logged in successfully!",
+        "access_token": access_token,
+        "token_type": "Bearer"
+    }

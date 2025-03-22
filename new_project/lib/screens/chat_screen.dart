@@ -1,11 +1,12 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:record/record.dart';
-import 'package:audioplayers/audioplayers.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:new_project/services/api_service.dart'; // Import your API service
+import 'dart:convert';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required Map<String, dynamic> professional});
+  final Map<String, dynamic> professional;
+  final List<dynamic> chatHistory;
+  const ChatScreen(
+      {super.key, required this.professional, required this.chatHistory});
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -13,71 +14,87 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+  final ApiService _apiService = ApiService();
   List<Map<String, dynamic>> messages = [];
- final AudioRecorder _audioRecorder = AudioRecorder();
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  // ignore: unused_field
-  String? _recordedFilePath;
-  bool _isRecording = false;
-
-  // Start recording audio
- Future<void> _startRecording() async {
-  try {
-    final hasPermission = await _audioRecorder.hasPermission();
-    if (hasPermission) {
-      Directory tempDir = await getTemporaryDirectory();
-      String path = '${tempDir.path}/audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
-
-      await _audioRecorder.start(
-        RecordConfig(encoder: AudioEncoder.aacLc),
-        path: path, // Ensure path is passed
-      );
-
-      setState(() {
-        _isRecording = true;
-        _recordedFilePath = path;
-      });
-    }
-  } catch (e) {
-    print("Recording error: $e");
+  @override
+  void initState() {
+    super.initState();
+    _initializeChat();
+    // debugPrint('Preparing to listen');
+    _apiService.connectWebSocket();
+    _apiService.listenForMessages(_onMessageReceived);
   }
-}
-  // Stop recording and save audio
-  Future<void> _stopRecording() async {
+
+  void _initializeChat() {
+    setState(() {
+      // debugPrint('Chat history in chat_screen : ${widget.chatHistory}');
+      messages = widget.chatHistory.map((msg) {
+        return {
+          'type': 'text',
+          'message': msg['text'] ?? '',
+          'sender': msg['sender'] ?? 'unknown',
+          'timestamp': msg['timestamp'] ?? ''
+        };
+      }).toList();
+    });
+  }
+
+  void _onMessageReceived(dynamic message) {
+  if (mounted) {
+    // debugPrint("Raw received message: $message"); // Debug print for debugging
+
     try {
-      String? path = await _audioRecorder.stop();
-      if (path != null) {
+      // Check if the message is a string (likely JSON)
+      if (message is String) {
+        var decodedMessage = jsonDecode(message); // Decode JSON string
+        if (decodedMessage is Map<String, dynamic> && decodedMessage.containsKey('message')) {
+          setState(() {
+            messages.add({
+              'type': 'text',
+              'message': decodedMessage['message'],
+              'sender': decodedMessage['sender'] ?? 'unknown'
+            });
+          });
+          // debugPrint("Processed message: $decodedMessage");
+        } else {
+          // debugPrint("Unexpected message format: $decodedMessage");
+        }
+      } else if (message is Map<String, dynamic> && message.containsKey('message')) {
+        // If message is already a Map
         setState(() {
-          _isRecording = false;
-          messages.add({'type': 'audio', 'path': path});
+          messages.add({
+            'type': 'text',
+            'message': message['message'],
+            'sender': message['sender'] ?? 'unknown'
+          });
         });
+      } else {
+        // debugPrint("Invalid message structure: $message");
       }
     } catch (e) {
-      print("Stop recording error: $e");
+      debugPrint("Error processing message: $e");
     }
   }
+}
 
-  // Play recorded audio
-  Future<void> _playAudio(String path) async {
-    await _audioPlayer.play(DeviceFileSource(path));
-  }
 
   // Send text message
-  void _sendMessage() {
+  void _sendMessage() async {
     String message = _messageController.text.trim();
     if (message.isNotEmpty) {
       setState(() {
         messages.add({'type': 'text', 'message': message});
       });
+      String receiverUsername = widget.professional['username'] ?? 'Unknown';
+      await _apiService.sendMessage(message, receiverUsername);
       _messageController.clear();
     }
   }
 
   @override
   void dispose() {
-    _audioRecorder.dispose();
-    _audioPlayer.dispose();
+    _apiService.disconnectWebSocket();
     super.dispose();
   }
 
@@ -95,48 +112,25 @@ class _ChatScreenState extends State<ChatScreen> {
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 var msg = messages[index];
-                if (msg['type'] == 'text') {
-                  // Display text messages
-                  return Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        msg['message'],
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                bool isReceived =
+                    msg['sender'] == widget.professional['username'];
+                return Align(
+                  alignment:
+                      isReceived ? Alignment.centerLeft : Alignment.centerRight,
+                  child: Container(
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color : isReceived ? const Color.fromARGB(255, 241, 105, 105) : const Color.fromARGB(255, 33, 150, 243),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                } else if (msg['type'] == 'audio') {
-                  // Display audio messages with play button
-                  return Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.play_arrow, color: Colors.black),
-                            onPressed: () => _playAudio(msg['path']),
-                          ),
-                          const Text("Voice Message"),
-                        ],
-                      ),
+                    child: Text(
+                      msg['message'],
+                      style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
                     ),
-                  );
-                }
-                return const SizedBox.shrink();
+                  ),
+                );
               },
             ),
           ),
@@ -158,17 +152,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   icon: const Icon(Icons.send, color: Colors.blue),
                   onPressed: _sendMessage,
                 ),
-                GestureDetector(
-                  onLongPress: _startRecording,
-                  onLongPressUp: _stopRecording,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isRecording ? Colors.red : Colors.grey,
-                    ),
-                    child: const Icon(Icons.mic, color: Colors.white),
+                // Placeholder for audio recording button (disabled)
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey,
                   ),
+                  child: const Icon(Icons.mic, color: Colors.white),
                 ),
               ],
             ),

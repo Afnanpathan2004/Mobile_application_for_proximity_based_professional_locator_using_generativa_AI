@@ -37,6 +37,8 @@ dependencies:
   # App branding (Optional)
   flutter_native_splash: ^2.3.0
   flutter_launcher_icons: ^0.14.3
+  web_socket_channel: ^3.0.2
+  dart_jsonwebtoken: ^2.17.0
 
 dev_dependencies:
   flutter_test:

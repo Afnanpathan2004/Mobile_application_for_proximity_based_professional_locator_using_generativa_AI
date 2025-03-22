@@ -1,18 +1,36 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
+import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 class ApiService {
   static const String baseUrl =
       'http://127.0.0.1:8000'; // Replace with your FastAPI URL
   static String? sessionCookie;
+  static String? loggedInUsername;
+
+// code to extract loggedin username from JWT
+  static String? extractUsernameFromJWT(String jwt) {
+    try {
+      final jwtDecoded = JWT.decode(jwt);
+      // debugPrint("Decoded JWT: $jwtDecoded");
+      return jwtDecoded.payload['sub'];
+    } catch (e) {
+      debugPrint("Error decoding JWT: $e");
+      return null;
+    }
+  }
 
 // Extract session token from the cookie
-  static void extractCookie(http.Response response) {
-    String? rawCookie = response.headers['set-cookie'];
-    if (rawCookie != null) {
-      sessionCookie = rawCookie.split(';')[0]; // Store only "access_token=..."
-    }
+  static void extractCookie(String accessToken) {
+    sessionCookie = "access_token=$accessToken"; // Store the token
+    // debugPrint("Session Cookie: $sessionCookie");
+
+    // Extract and store the username from the JWT
+    loggedInUsername = extractUsernameFromJWT(accessToken);
+    // debugPrint("Logged in User: $loggedInUsername");
   }
 
 // Search Functionality
@@ -93,8 +111,10 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      extractCookie(response); // Extract JWT from cookie and store it
-      return jsonDecode(response.body);
+      final responseData = jsonDecode(response.body);
+      String accessToken = responseData['access_token'];
+      extractCookie(accessToken);
+      return responseData;
     } else {
       throw Exception('Failed to login: ${response.body}');
     }
@@ -146,7 +166,6 @@ class ApiService {
     }
   }
 
-
 // Logout Endpoint
   static Future<void> logoutUser() async {
     final Uri url = Uri.parse('$baseUrl/logout'); // Logout endpoint
@@ -168,4 +187,89 @@ class ApiService {
       throw Exception('Logout Error: $e');
     }
   }
+
+// Send Chat functionality
+  Future<void> sendMessage(String message, String receiverId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/chat/send'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'sender': 'PLACEHOLDER',
+          'message': message,
+          'receiver': receiverId,
+          'timestamp': '2025-02-08T09:34:23.923Z'
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        // debugPrint("Failed to send message: ${response.body}");
+      }
+    } catch (e) {
+      debugPrint("Error sending message: $e");
+    }
+  }
+
+// Connect to websocket functionality
+  WebSocketChannel? channel;
+  void connectWebSocket() {
+    if (loggedInUsername == null) {
+      debugPrint(
+          "Error: No logged-in user found. Cannot connect to WebSocket.");
+      return;
+    }
+
+    // debugPrint('Connecting WebSocket for user: $loggedInUsername');
+    channel = WebSocketChannel.connect(
+      Uri.parse('ws://127.0.0.1:8000/chat/ws/$loggedInUsername'),
+    );
+  }
+
+// Listen for incoming messages
+  void listenForMessages(Function(dynamic) onMessageReceived) {
+    // debugPrint("Listening for WebSocket messages");
+    channel!.stream.listen(
+      (message) {
+        // debugPrint("WebSocket Message Received: $message");
+        onMessageReceived(
+            message); 
+      },
+      onError: (error) {
+        debugPrint("WebSocket Error: $error");
+      },
+      onDone: () {
+        debugPrint("WebSocket connection closed");
+      },
+      cancelOnError: true,
+    );
+  }
+
+  void disconnectWebSocket() {
+    channel?.sink.close(status.normalClosure);
+    channel = null;
+  }
+
+// Fetch chat history
+  static Future<dynamic> fetchChatHistory(String professionalUsername) async {
+    final Uri url = Uri.parse('$baseUrl/chat/$professionalUsername');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // debugPrint('Chat History recieved from the backend (API Service): ${jsonDecode(response.body)['messages']}');
+        return jsonDecode(response.body)['messages']; // Extract chat messages
+      } else {
+        throw Exception('Failed to fetch chat history: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Chat History Fetch Error: $e');
+    }
+  }
 }
+
