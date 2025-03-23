@@ -271,5 +271,50 @@ class ApiService {
       throw Exception('Chat History Fetch Error: $e');
     }
   }
+
+// Community API'S
+
+// Fetch previous chats from the backend
+  static Future<List<Map<String, String>>> fetchPreviousChats() async {
+  final response = await http.get(Uri.parse("$baseUrl/display_community"));
+  if (response.statusCode == 200) {
+    // debugPrint("raw Response: ${response.body}");
+    final Map<String, dynamic> responseBody = json.decode(response.body);
+    // debugPrint("Decoded Response Body: $responseBody");
+    // Extract the "messages" list from the response
+    final List<dynamic> messages = responseBody["messages"];
+    // debugPrint("Messages got: $messages");
+    // Convert each message to a Map<String, String>
+    return messages.map((chat) => {
+      "text": chat["message"].toString(), // Ensure "text" is a String
+      "sender": chat["username"].toString(), // Ensure "sender" is a String
+    }).toList();
+  } else {
+    throw Exception("Failed to load previous chats");
+  }
 }
+
+  // Send a message to the backend
+  static Future<void> sendMessageCommunity(String message) async {
+  final response = await http.post(
+    Uri.parse("$baseUrl/community"),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: json.encode({"message": message}), 
+  );
+
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> responseBody = json.decode(response.body);
+    if (responseBody["success"] == true) {
+      // debugPrint("Message sent successfully: ${responseBody["message"]}");
+    } else {
+      throw Exception("Failed to send message: ${responseBody["detail"]}");
+    }
+  } else {
+    throw Exception("Failed to send message: ${response.statusCode}");
+  }
+}
+}
+
 

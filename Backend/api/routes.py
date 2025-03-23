@@ -273,7 +273,7 @@ async def community(response:Response, message_data: Message, access_token: str 
         "timestamp": datetime.utcnow()
     }
     community_coll.insert_one(message_entry)
-    return  {"success": True, "message": message_data.message, "sentiment": sentiment}
+    return  {"message": message_data.message, "sentiment": sentiment, "success": True}
 
 
 # Display Community Chat
