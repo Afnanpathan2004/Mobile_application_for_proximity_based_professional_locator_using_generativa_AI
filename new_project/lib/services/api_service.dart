@@ -203,7 +203,7 @@ class ApiService {
       );
 
       if (response.statusCode != 200) {
-        // debugPrint("Failed to send message: ${response.body}");
+        debugPrint("Failed to send message: ${response.body}");
       }
     } catch (e) {
       debugPrint("Error sending message: $e");

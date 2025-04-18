@@ -58,7 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
           });
           // debugPrint("Processed message: $decodedMessage");
         } else {
-          // debugPrint("Unexpected message format: $decodedMessage");
+          debugPrint("Unexpected message format: $decodedMessage");
         }
       } else if (message is Map<String, dynamic> && message.containsKey('message')) {
         // If message is already a Map
@@ -70,7 +70,7 @@ class _ChatScreenState extends State<ChatScreen> {
           });
         });
       } else {
-        // debugPrint("Invalid message structure: $message");
+        debugPrint("Invalid message structure: $message");
       }
     } catch (e) {
       debugPrint("Error processing message: $e");
