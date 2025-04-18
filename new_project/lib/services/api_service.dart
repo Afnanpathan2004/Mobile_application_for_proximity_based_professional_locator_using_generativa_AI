@@ -11,6 +11,28 @@ class ApiService {
   static String? sessionCookie;
   static String? loggedInUsername;
 
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    final Uri url = Uri.parse('$baseUrl/user/profile');
+    
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (sessionCookie != null) 'Cookie': sessionCookie!,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to load profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to fetch profile: $e');
+    }
+  }
+
 // code to extract loggedin username from JWT
   static String? extractUsernameFromJWT(String jwt) {
     try {
