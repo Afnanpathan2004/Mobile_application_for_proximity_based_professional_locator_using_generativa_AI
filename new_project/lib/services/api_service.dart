@@ -231,8 +231,7 @@ class ApiService {
     channel!.stream.listen(
       (message) {
         // debugPrint("WebSocket Message Received: $message");
-        onMessageReceived(
-            message); 
+        onMessageReceived(message);
       },
       onError: (error) {
         debugPrint("WebSocket Error: $error");
@@ -276,45 +275,48 @@ class ApiService {
 
 // Fetch previous chats from the backend
   static Future<List<Map<String, String>>> fetchPreviousChats() async {
-  final response = await http.get(Uri.parse("$baseUrl/display_community"));
-  if (response.statusCode == 200) {
-    // debugPrint("raw Response: ${response.body}");
-    final Map<String, dynamic> responseBody = json.decode(response.body);
-    // debugPrint("Decoded Response Body: $responseBody");
-    // Extract the "messages" list from the response
-    final List<dynamic> messages = responseBody["messages"];
-    // debugPrint("Messages got: $messages");
-    // Convert each message to a Map<String, String>
-    return messages.map((chat) => {
-      "text": chat["message"].toString(), // Ensure "text" is a String
-      "sender": chat["username"].toString(), // Ensure "sender" is a String
-    }).toList();
-  } else {
-    throw Exception("Failed to load previous chats");
+    final response = await http.get(Uri.parse("$baseUrl/display_community"));
+    if (response.statusCode == 200) {
+      // debugPrint("raw Response: ${response.body}");
+      final Map<String, dynamic> responseBody = json.decode(response.body);
+      // debugPrint("Decoded Response Body: $responseBody");
+      // Extract the "messages" list from the response
+      final List<dynamic> messages = responseBody["messages"];
+      // debugPrint("Messages got: $messages");
+      // Convert each message to a Map<String, String>
+      return messages
+          .map((chat) => {
+                "text": chat["message"].toString(), // Ensure "text" is a String
+                "sender":
+                    chat["username"].toString(), // Ensure "sender" is a String
+              })
+          .toList();
+    } else {
+      throw Exception("Failed to load previous chats");
+    }
   }
-}
 
   // Send a message to the backend
   static Future<void> sendMessageCommunity(String message) async {
-  final response = await http.post(
-    Uri.parse("$baseUrl/community"),
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: json.encode({"message": message}), 
-  );
+    final response = await http.post(
+      Uri.parse("$baseUrl/community"),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: json.encode({"message": message}),
+    );
 
-  if (response.statusCode == 200) {
-    final Map<String, dynamic> responseBody = json.decode(response.body);
-    if (responseBody["success"] == true) {
-      // debugPrint("Message sent successfully: ${responseBody["message"]}");
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> responseBody = json.decode(response.body);
+      if (responseBody["success"] == true) {
+        // debugPrint("Message sent successfully: ${responseBody["message"]}");
+      } else {
+        throw Exception("Failed to send message: ${responseBody["detail"]}");
+      }
     } else {
-      throw Exception("Failed to send message: ${responseBody["detail"]}");
+      throw Exception("Failed to send message: ${response.statusCode}");
     }
-  } else {
-    throw Exception("Failed to send message: ${response.statusCode}");
   }
-}
 
 // Chatbot API
 
@@ -329,11 +331,33 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
+      // debugPrint("Chatbot response: ${response.body}");
       return json.decode(response.body);
     } else {
       throw Exception("Failed to send message: ${response.statusCode}");
     }
   }
+
+// Get Conversation Log
+  static Future<List<Map<String, dynamic>>> getConversationLog() async {
+  final response = await http.get(Uri.parse("$baseUrl/chat"));
+  if (response.statusCode == 200) {
+    final body = json.decode(response.body);
+    // debugPrint("Raw decoded body: $body");
+
+    // If the response is a plain list:
+    if (body is List) {
+      return List<Map<String, dynamic>>.from(body);
+    }
+
+    // If it's a map with convo_log key:
+    if (body is Map && body.containsKey("convo_log")) {
+      return List<Map<String, dynamic>>.from(body["convo_log"]);
+    }
+
+    throw Exception("Unexpected response format: $body");
+  } else {
+    throw Exception("Failed to fetch chat log: ${response.statusCode}");
+  }
 }
-
-
+}

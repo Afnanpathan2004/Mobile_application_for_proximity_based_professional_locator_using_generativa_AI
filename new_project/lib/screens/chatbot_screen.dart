@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:new_project/services/api_service.dart'; 
+import 'package:new_project/services/api_service.dart';
+import 'dart:convert';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
 
   @override
-  _ChatbotScreenState createState() => _ChatbotScreenState();
+  State<ChatbotScreen> createState() => _ChatbotScreenState();
 }
 
 class _ChatbotScreenState extends State<ChatbotScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, String>> _messages = [];
   final ScrollController _scrollController = ScrollController();
-  final String loggedInUsername = ApiService.loggedInUsername ?? "Unknown User";
+
+  final List<Map<String, String>> _messages = [];
+
+  final String loggedInUsername = ApiService.loggedInUsername ?? "You";
 
   @override
   void initState() {
@@ -20,56 +23,111 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _loadPreviousChat();
   }
 
-  void _loadPreviousChat() async {
-    // Example: Load previous chat from the backend
+  Future<void> _loadPreviousChat() async {
     try {
-      final response = await ApiService.chatbotchat(""); // Empty message to fetch chat history
-      setState(() {
-        _messages.addAll(response["convo_log"] ?? []);
-      });
+      final List<Map<String, dynamic>> chatHistory =
+          await ApiService.getConversationLog();
+      // debugPrint("Chat history loaded: $chatHistory");
+      final List<Map<String, String>> formatted = [];
+
+      for (var entry in chatHistory) {
+        if (entry.containsKey('user_message')) {
+          formatted.add({
+            'sender': loggedInUsername,
+            'message': entry['user_message'] ?? ''
+          });
+        }
+        if (entry.containsKey('bot_response')) {
+          formatted
+              .add({'sender': 'bot', 'message': entry['bot_response'] ?? ''});
+        }
+        // debugPrint(
+            // "Formatted Chat history loaded Message: ${entry['user_message']}");
+        // debugPrint(
+            // "Formatted chat history loaded Message: ${entry['bot_response']}");
+      }
+
+      if (!mounted) return;
+      setState(() => _messages.addAll(formatted));
       _scrollToBottom();
     } catch (e) {
-      debugPrint("Failed to load chat history: $e");
+      debugPrint("Error fetching chat history: $e");
     }
   }
 
-  void _sendMessage() async {
-    String text = _controller.text.trim();
-    if (text.isNotEmpty) {
-      setState(() {
-        _messages.add({"sender": loggedInUsername, "message": text});
-        _controller.clear();
-      });
-      _scrollToBottom();
+  Future<void> _sendMessage() async {
+    final String userText = _controller.text.trim();
+    if (userText.isEmpty) return;
 
-      try {
-        // Send the message to the backend
-        final response = await ApiService.chatbotchat(text);
-        setState(() {
-          _messages.add({"sender": "bot", "message": response["response"]});
+    setState(() {
+      _messages.add({'sender': loggedInUsername, 'message': userText});
+      _controller.clear();
+    });
+
+    _scrollToBottom();
+
+    try {
+      final response = await ApiService.chatbotchat(userText);
+      // debugPrint("Screen Side Bot Response: $response");
+
+      // This is where you fix it
+      final bodyString = response[0]['body'];
+      final bodyMap =
+          jsonDecode(bodyString); // 🔥 Now it's a Map<String, dynamic>
+      final botMessage = bodyMap['bot response'] ?? 'No response received.';
+
+      setState(() {
+        _messages.add({'sender': 'bot', 'message': botMessage});
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      debugPrint("Error sending message: $e");
+      setState(() {
+        _messages.add({
+          'sender': 'bot',
+          'message': 'Error: Failed to connect to chatbot.'
         });
-        _scrollToBottom();
-      } catch (e) {
-        debugPrint("Failed to send message: $e");
-        setState(() {
-          _messages.add({"sender": "bot", "message": "Failed to get a response. Please try again."});
-        });
-        _scrollToBottom();
-      }
+      });
     }
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
+  }
+
+  Widget _buildChatBubble(String sender, String message) {
+    final isUser = sender == loggedInUsername;
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isUser ? Colors.blueAccent : Colors.grey[700],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chatbot'),
+        title: const Text("Chatbot"),
         backgroundColor: Colors.blue,
       ),
       body: Column(
@@ -79,24 +137,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               controller: _scrollController,
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                final message = _messages[index];
-                return Align(
-                  alignment: message["sender"] == loggedInUsername
-                      ? Alignment.centerRight
-                      : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: message["sender"] == loggedInUsername ? Colors.blue : Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      message["message"]!,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                );
+                final msg = _messages[index];
+                return _buildChatBubble(msg['sender']!, msg['message']!);
               },
             ),
           ),
@@ -113,13 +155,13 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    onSubmitted: (value) => _sendMessage(),
+                    onSubmitted: (_) => _sendMessage(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  onPressed: _sendMessage,
                   icon: const Icon(Icons.send, color: Colors.blue),
+                  onPressed: _sendMessage,
                 ),
               ],
             ),

@@ -28,7 +28,10 @@ def get_chatbot_response(user_message, user_id,  is_first_message=False):
         {'username': user_id},  
         {'$set': {'conversation_log': []}}  
         )
-    convo_log = user_data.get('conversation_log', [])
+        is_first_message = True
+        convo_log = []
+    else:    
+        convo_log = user_data.get('conversation_log', [])
     if is_first_message:
         prompt = "Ask only the content given in the backticks `Hello! How can I assist you today?`"
     else:
@@ -70,3 +73,17 @@ def get_chatbot_response(user_message, user_id,  is_first_message=False):
     )
 
     return bot_response, convo_log
+
+
+def get_conversation_history(user_id):
+    user_data = convo.find_one({'username': user_id})
+    if user_data and 'conversation_log' in user_data:
+        convo_log = user_data.get('conversation_log', [])
+        return convo_log
+    else:
+        convo.insert_one({'username': user_id})
+        convo.update_one(
+        {'username': user_id},  
+        {'$set': {'conversation_log': []}}  
+        )
+        return []
