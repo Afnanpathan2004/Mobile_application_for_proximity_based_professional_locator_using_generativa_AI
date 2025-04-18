@@ -315,6 +315,25 @@ class ApiService {
     throw Exception("Failed to send message: ${response.statusCode}");
   }
 }
+
+// Chatbot API
+
+// Send a message to the backend
+  static Future<Map<String, dynamic>> chatbotchat(String message) async {
+    final response = await http.post(
+      Uri.parse("$baseUrl/chat"),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: json.encode({"message": message}),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Failed to send message: ${response.statusCode}");
+    }
+  }
 }
 
 

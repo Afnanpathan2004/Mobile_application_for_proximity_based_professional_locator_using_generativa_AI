@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Body
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from auth.user_auth import register_user, login_for_access_token, collection, ACCESS_TOKEN_EXPIRE_MINUTES
 from auth.jwt import verify_token, Secret_key, algo
 from auth.user_schema import UserCreate, Token, Message, MessageSchema
 from Community.community import message_analysis, display_messages, update_DB
 from auth.jwt import oauth2, create_access_token
+from Chatbot.Chatbot_logic import get_chatbot_response
 from jose import JWTError, jwt
 from datetime import timedelta
 from pymongo import MongoClient
@@ -446,3 +448,47 @@ async def chat_ws(websocket: WebSocket, sender: str):
         # Unregister the user when the WebSocket connection closes
         active_connections.pop(sender, None)
         await websocket.close()  # Close the WebSocket connection
+
+# Chatbot Api
+
+@router.post("/chat")
+async def chat_post(response: Response, chat_request: Message, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+    
+    # Get the user message from the request body
+    user_message = chat_request.message
+    
+    # Call the chatbot logic function
+    bot_response, convo_log = get_chatbot_response(user_message, user)
+    
+    # Return the bot's response as JSON
+    return JSONResponse(content={"response": bot_response}), convo_log
