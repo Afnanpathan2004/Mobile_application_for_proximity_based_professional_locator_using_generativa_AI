@@ -12,69 +12,77 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
-      appBar: AppBar(
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: theme.colorScheme.primaryContainer,
-          statusBarIconBrightness: theme.brightness == Brightness.dark 
-              ? Brightness.light 
-              : Brightness.dark,
-        ),
-        title: Text(
-          'Home',
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.onPrimary,
+      body: CustomScrollView(
+        slivers: [
+          // App bar with cool animation effect
+          SliverAppBar(
+            systemOverlayStyle: SystemUiOverlayStyle(
+              statusBarColor: theme.colorScheme.primaryContainer,
+              statusBarIconBrightness: theme.brightness == Brightness.dark 
+                  ? Brightness.light 
+                  : Brightness.dark,
+            ),
+            expandedHeight: 200.0,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(
+                'Welcome',
+                style: textTheme.headlineSmall?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(2, 2),
+                    ),
+                  ],
+                ),
+              ),
+              background: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      theme.colorScheme.primary.withOpacity(0.8),
+                      theme.colorScheme.secondary.withOpacity(0.6),
+                    ],
+                  ),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.home_filled,
+                    size: 80,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
-        elevation: 4,
-        shadowColor: theme.colorScheme.primary.withOpacity(0.3),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(16),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
-            },
-            tooltip: 'Notifications',
-          ),
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-            tooltip: 'Settings',
+
+          // Main content
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  // Hero welcome card
+                  _buildWelcomeCard(context),
+                  const SizedBox(height: 32),
+                  
+                  // Auth options with cool animation
+                  _buildAuthOptions(context),
+                  const SizedBox(height: 32),
+                  
+                  // Additional features
+                  _buildFeatureGrid(context),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildWelcomeCard(context),
-            const SizedBox(height: 24),
-            _buildQuickActions(context),
-            const SizedBox(height: 24),
-            _buildRecentActivity(context),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add action here
-        },
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        elevation: 4,
-        child: const Icon(Icons.add),
-      ),
-      drawer: _buildDrawer(context),
     );
   }
 
@@ -83,139 +91,52 @@ class HomeScreen extends StatelessWidget {
     final textTheme = theme.textTheme;
 
     return Card(
-      elevation: 4,
+      elevation: 8,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
-      color: theme.colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Welcome back!',
-              style: textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'You have 3 new notifications and 5 pending tasks.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onPrimaryContainer.withOpacity(0.8),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/dashboard');
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              child: const Text('View Dashboard'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Quick Actions',
-          style: textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
+      shadowColor: theme.colorScheme.primary.withOpacity(0.3),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.primaryContainer,
+              theme.colorScheme.secondaryContainer,
+            ],
           ),
         ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          children: [
-            _buildActionButton(
-              context,
-              icon: Icons.calendar_today,
-              label: 'Schedule',
-              route: '/schedule',
-              color: Colors.blueAccent,
-            ),
-            _buildActionButton(
-              context,
-              icon: Icons.people_outline,
-              label: 'Contacts',
-              route: '/contacts',
-              color: Colors.green,
-            ),
-            _buildActionButton(
-              context,
-              icon: Icons.file_present,
-              label: 'Documents',
-              route: '/documents',
-              color: Colors.orange,
-            ),
-            _buildActionButton(
-              context,
-              icon: Icons.chat_bubble_outline,
-              label: 'Messages',
-              route: '/messages',
-              color: Colors.purple,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String route,
-    required Color color,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.pushNamed(context, route);
-        },
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 32,
-                color: color,
+              // Animated icon
+              const SizedBox(
+                height: 80,
+                child: Center(
+                  child: Icon(
+                    Icons.rocket_launch,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
               Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                'Professional Locator',
+                style: textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Find and connect with professionals in your area',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onPrimaryContainer.withOpacity(0.9),
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -225,65 +146,93 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivity(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
+  Widget _buildAuthOptions(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Recent Activity',
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+        // Login button with animation
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          width: double.infinity,
+          height: 60,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/activity');
-              },
-              child: const Text('View All'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/login');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildActivityItem(
-                  context,
-                  icon: Icons.task,
-                  title: 'Completed Task',
-                  subtitle: 'Project Dashboard UI',
-                  time: '2 hours ago',
-                  color: Colors.green,
+                const Icon(Icons.login, color: Colors.white),
+                const SizedBox(width: 10),
+                Text(
+                  'Login to Your Account',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
-                const Divider(height: 24),
-                _buildActivityItem(
-                  context,
-                  icon: Icons.email,
-                  title: 'New Message',
-                  subtitle: 'From: John Doe',
-                  time: '5 hours ago',
-                  color: Colors.blue,
-                ),
-                const Divider(height: 24),
-                _buildActivityItem(
-                  context,
-                  icon: Icons.event,
-                  title: 'Upcoming Meeting',
-                  subtitle: 'Team Sync - Tomorrow',
-                  time: '1 day ago',
-                  color: Colors.orange,
+              ],
+            ),
+          ),
+        ),
+        
+        // Register button with animation
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          width: double.infinity,
+          height: 60,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/register');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.app_registration, color: Colors.white),
+                const SizedBox(width: 10),
+                Text(
+                  'Create New Account',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ],
             ),
@@ -293,138 +242,112 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityItem(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String time,
-    required Color color,
-  }) {
-    return Row(
+  Widget _buildFeatureGrid(BuildContext context) {
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+        Text(
+          'Explore Features',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
+        const SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          children: [
+            _buildFeatureItem(
+              context,
+              icon: Icons.search,
+              label: 'Find Pros',
+              color: Colors.orange,
+            ),
+            _buildFeatureItem(
+              context,
+              icon: Icons.people,
+              label: 'Community',
+              color: Colors.purple,
+            ),
+            _buildFeatureItem(
+              context,
+              icon: Icons.chat,
+              label: 'Chat',
+              color: Colors.blue,
+            ),
+            _buildFeatureItem(
+              context,
+              icon: Icons.settings,
+              label: 'Settings',
+              color: Colors.grey,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFeatureItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(15),
+        onTap: () {
+          // Add feature navigation here
+          _showFeatureComingSoon(context, label);
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  size: 28,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 12),
               Text(
-                title,
+                label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.secondary,
                     ),
               ),
             ],
           ),
         ),
-        Text(
-          time,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
-
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: theme.colorScheme.onPrimary,
-                  child: const Icon(
-                    Icons.person,
-                    size: 40,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'John Doe',
-                  style: textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onPrimary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  'john.doe@example.com',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onPrimary.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.person),
-            title: const Text('Profile'),
-            onTap: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.settings),
-            title: const Text('Settings'),
-            onTap: () {
-              Navigator.pushNamed(context, '/settings');
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.help),
-            title: const Text('Help & Feedback'),
-            onTap: () {
-              Navigator.pushNamed(context, '/help');
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Log Out'),
-            onTap: () {
-              // Implement logout functionality
-              Navigator.pushReplacementNamed(context, '/login');
-            },
+  void _showFeatureComingSoon(BuildContext context, String featureName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('$featureName Coming Soon!'),
+        content: Text('This feature will be available in future updates.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),
