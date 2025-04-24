@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -6,10 +7,63 @@ import 'package:web_socket_channel/status.dart' as status;
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 
 class ApiService {
-  static const String baseUrl =
-      'http://127.0.0.1:8000'; // Replace with your FastAPI URL
+  static const String baseUrl = 'http://127.0.0.1:8000';
   static String? sessionCookie;
   static String? loggedInUsername;
+  
+  // Typing status functionality
+  static final Map<String, bool> _typingStatus = {};
+  static final StreamController<Map<String, bool>> _typingController = 
+      StreamController<Map<String, bool>>.broadcast();
+  static WebSocketChannel? _typingChannel;
+
+  // Typing status methods
+  static void sendTypingStatus(bool isTyping) {
+    if (loggedInUsername == null) return;
+    
+    _typingStatus[loggedInUsername!] = isTyping;
+    _typingController.add(Map.from(_typingStatus));
+    
+    // Send to server via WebSocket if connected
+    _typingChannel?.sink.add(jsonEncode({
+      'type': 'typing_status',
+      'username': loggedInUsername,
+      'is_typing': isTyping
+    }));
+  }
+
+  static Stream<Map<String, bool>> get typingUpdates => _typingController.stream;
+
+  static void connectTypingWebSocket() {
+    if (loggedInUsername == null) return;
+    
+    _typingChannel = WebSocketChannel.connect(
+      Uri.parse('ws://$baseUrl/ws/typing/$loggedInUsername'),
+    );
+
+    _typingChannel!.stream.listen((message) {
+      try {
+        final data = jsonDecode(message);
+        if (data['type'] == 'typing_status') {
+          final username = data['username'];
+          final isTyping = data['is_typing'];
+          _typingStatus[username] = isTyping;
+          _typingController.add(Map.from(_typingStatus));
+        }
+      } catch (e) {
+        debugPrint('Error handling typing status: $e');
+      }
+    }, onError: (error) {
+      debugPrint('Typing WebSocket error: $error');
+    });
+  }
+
+  static void disconnectTypingWebSocket() {
+    _typingChannel?.sink.close(status.normalClosure);
+    _typingChannel = null;
+  }
+
+  // Existing methods...
 
   static Future<Map<String, dynamic>> getUserProfile() async {
     final Uri url = Uri.parse('$baseUrl/user/profile');
@@ -33,11 +87,9 @@ class ApiService {
     }
   }
 
-// code to extract loggedin username from JWT
   static String? extractUsernameFromJWT(String jwt) {
     try {
       final jwtDecoded = JWT.decode(jwt);
-      // debugPrint("Decoded JWT: $jwtDecoded");
       return jwtDecoded.payload['sub'];
     } catch (e) {
       debugPrint("Error decoding JWT: $e");
@@ -45,32 +97,23 @@ class ApiService {
     }
   }
 
-// Extract session token from the cookie
   static void extractCookie(String accessToken) {
-    sessionCookie = "access_token=$accessToken"; // Store the token
-    // debugPrint("Session Cookie: $sessionCookie");
-
-    // Extract and store the username from the JWT
+    sessionCookie = "access_token=$accessToken";
     loggedInUsername = extractUsernameFromJWT(accessToken);
-    // debugPrint("Logged in User: $loggedInUsername");
   }
 
-// Search Functionality
   static Future<dynamic> searchProfessionals(String query) async {
-    if (kDebugMode) {
-      // print('api service vala : $query');
-    }
-    final Uri url = Uri.parse('$baseUrl/search'); // Endpoint for search
+    final Uri url = Uri.parse('$baseUrl/search');
 
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(query), // Send query as JSON
+        body: jsonEncode(query),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body); // Return decoded response
+        return jsonDecode(response.body);
       } else {
         throw Exception('Failed to search: ${response.statusCode}');
       }
@@ -79,7 +122,6 @@ class ApiService {
     }
   }
 
-  // Registration endpoint
   Future<Map<String, dynamic>> registerUser({
     required String username,
     required String password,
@@ -117,7 +159,6 @@ class ApiService {
     }
   }
 
-  // Login endpoint
   Future<Map<String, dynamic>> loginUser({
     required String username,
     required String password,
@@ -136,13 +177,13 @@ class ApiService {
       final responseData = jsonDecode(response.body);
       String accessToken = responseData['access_token'];
       extractCookie(accessToken);
+      connectTypingWebSocket(); // Connect typing WebSocket on login
       return responseData;
     } else {
       throw Exception('Failed to login: ${response.body}');
     }
   }
 
-// Community Endpoint
   static Future<dynamic> getCommunityPosts() async {
     final Uri url = Uri.parse('$baseUrl/display_community');
 
@@ -157,8 +198,7 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception(
-            'Failed to fetch community posts: ${response.statusCode}');
+        throw Exception('Failed to fetch community posts: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Community Fetch Error: $e');
@@ -173,7 +213,7 @@ class ApiService {
         url,
         headers: {
           'Content-Type': 'application/json',
-          if (sessionCookie != null) 'Cookie': sessionCookie!, // Send JWT
+          if (sessionCookie != null) 'Cookie': sessionCookie!,
         },
         body: jsonEncode({'content': content}),
       );
@@ -188,9 +228,9 @@ class ApiService {
     }
   }
 
-// Logout Endpoint
   static Future<void> logoutUser() async {
-    final Uri url = Uri.parse('$baseUrl/logout'); // Logout endpoint
+    disconnectTypingWebSocket(); // Disconnect typing WebSocket on logout
+    final Uri url = Uri.parse('$baseUrl/logout');
     try {
       final response = await http.post(
         url,
@@ -199,9 +239,8 @@ class ApiService {
         },
       );
       if (response.statusCode == 200) {
-        // Clear session cookie after successful logout
         sessionCookie = null;
-        // print("Logout successful");
+        loggedInUsername = null;
       } else {
         throw Exception('Failed to logout: ${response.statusCode}');
       }
@@ -210,17 +249,16 @@ class ApiService {
     }
   }
 
-// Send Chat functionality
   Future<void> sendMessage(String message, String receiverId) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/chat/send'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'sender': 'PLACEHOLDER',
+          'sender': loggedInUsername,
           'message': message,
           'receiver': receiverId,
-          'timestamp': '2025-02-08T09:34:23.923Z'
+          'timestamp': DateTime.now().toIso8601String()
         }),
       );
 
@@ -232,27 +270,21 @@ class ApiService {
     }
   }
 
-// Connect to websocket functionality
   WebSocketChannel? channel;
   void connectWebSocket() {
     if (loggedInUsername == null) {
-      debugPrint(
-          "Error: No logged-in user found. Cannot connect to WebSocket.");
+      debugPrint("Error: No logged-in user found. Cannot connect to WebSocket.");
       return;
     }
 
-    // debugPrint('Connecting WebSocket for user: $loggedInUsername');
     channel = WebSocketChannel.connect(
       Uri.parse('ws://127.0.0.1:8000/chat/ws/$loggedInUsername'),
     );
   }
 
-// Listen for incoming messages
   void listenForMessages(Function(dynamic) onMessageReceived) {
-    // debugPrint("Listening for WebSocket messages");
     channel!.stream.listen(
       (message) {
-        // debugPrint("WebSocket Message Received: $message");
         onMessageReceived(message);
       },
       onError: (error) {
@@ -270,7 +302,6 @@ class ApiService {
     channel = null;
   }
 
-// Fetch chat history
   static Future<dynamic> fetchChatHistory(String professionalUsername) async {
     final Uri url = Uri.parse('$baseUrl/chat/$professionalUsername');
 
@@ -283,8 +314,7 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        // debugPrint('Chat History recieved from the backend (API Service): ${jsonDecode(response.body)['messages']}');
-        return jsonDecode(response.body)['messages']; // Extract chat messages
+        return jsonDecode(response.body)['messages'];
       } else {
         throw Exception('Failed to fetch chat history: ${response.statusCode}');
       }
@@ -293,24 +323,15 @@ class ApiService {
     }
   }
 
-// Community API'S
-
-// Fetch previous chats from the backend
   static Future<List<Map<String, String>>> fetchPreviousChats() async {
     final response = await http.get(Uri.parse("$baseUrl/display_community"));
     if (response.statusCode == 200) {
-      // debugPrint("raw Response: ${response.body}");
       final Map<String, dynamic> responseBody = json.decode(response.body);
-      // debugPrint("Decoded Response Body: $responseBody");
-      // Extract the "messages" list from the response
       final List<dynamic> messages = responseBody["messages"];
-      // debugPrint("Messages got: $messages");
-      // Convert each message to a Map<String, String>
       return messages
           .map((chat) => {
-                "text": chat["message"].toString(), // Ensure "text" is a String
-                "sender":
-                    chat["username"].toString(), // Ensure "sender" is a String
+                "text": chat["message"].toString(),
+                "sender": chat["username"].toString(),
               })
           .toList();
     } else {
@@ -318,7 +339,6 @@ class ApiService {
     }
   }
 
-  // Send a message to the backend
   static Future<void> sendMessageCommunity(String message) async {
     final response = await http.post(
       Uri.parse("$baseUrl/community"),
@@ -331,7 +351,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final Map<String, dynamic> responseBody = json.decode(response.body);
       if (responseBody["success"] == true) {
-        // debugPrint("Message sent successfully: ${responseBody["message"]}");
+        debugPrint("Message sent successfully");
       } else {
         throw Exception("Failed to send message: ${responseBody["detail"]}");
       }
@@ -340,9 +360,6 @@ class ApiService {
     }
   }
 
-// Chatbot API
-
-// Send a message to the backend
   static Future<Map<String, dynamic>> chatbotchat(String message) async {
     final response = await http.post(
       Uri.parse("$baseUrl/chat"),
@@ -353,104 +370,90 @@ class ApiService {
     );
 
     if (response.statusCode == 200) {
-      // debugPrint("Chatbot response: ${response.body}");
       return json.decode(response.body);
     } else {
       throw Exception("Failed to send message: ${response.statusCode}");
     }
   }
 
-// Get Conversation Log
   static Future<List<Map<String, dynamic>>> getConversationLog() async {
-  final response = await http.get(Uri.parse("$baseUrl/chat"));
-  if (response.statusCode == 200) {
-    final body = json.decode(response.body);
-    // debugPrint("Raw decoded body: $body");
+    final response = await http.get(Uri.parse("$baseUrl/chat"));
+    if (response.statusCode == 200) {
+      final body = json.decode(response.body);
+      
+      if (body is List) {
+        return List<Map<String, dynamic>>.from(body);
+      }
 
-    // If the response is a plain list:
-    if (body is List) {
-      return List<Map<String, dynamic>>.from(body);
+      if (body is Map && body.containsKey("convo_log")) {
+        return List<Map<String, dynamic>>.from(body["convo_log"]);
+      }
+
+      throw Exception("Unexpected response format: $body");
+    } else {
+      throw Exception("Failed to fetch chat log: ${response.statusCode}");
     }
-
-    // If it's a map with convo_log key:
-    if (body is Map && body.containsKey("convo_log")) {
-      return List<Map<String, dynamic>>.from(body["convo_log"]);
-    }
-
-    throw Exception("Unexpected response format: $body");
-  } else {
-    throw Exception("Failed to fetch chat log: ${response.statusCode}");
   }
-}
 
-// API for getting the list of professionals contacted earlier by the user
-static Future<List<Map<String, dynamic>>> getChatHistory() async {
-  final url = Uri.parse("$baseUrl/chat_history");
+  static Future<List<Map<String, dynamic>>> getChatHistory() async {
+    final url = Uri.parse("$baseUrl/chat_history");
 
-  final response = await http.get(url, headers: {
-    "Accept": "application/json",
-  });
-
-  if (response.statusCode == 200) {
-    final body = json.decode(response.body);
-
-    // ✅ Step 1: Ensure 'data' exists and is a Map, not a List
-    if (body is Map && body.containsKey("data") && body["data"] is Map) {
-      final Map<String, dynamic> data = body["data"];
-
-      // ✅ Step 2: Convert each entry to desired format
-      return data.entries.map<Map<String, dynamic>>((entry) {
-        final userData = entry.value;
-        return {
-          "name": userData["sender"],
-          "lastMessage": userData["message_text"],
-          "timestamp": userData["timestamp"],
-        };
-      }).toList();
-    }
-
-    throw Exception("Unexpected response format: $body");
-  } else {
-    throw Exception("Failed to fetch chat history: ${response.statusCode}");
-  }
-}
-
-// API for getting profile info
-static Future<Map<String, dynamic>> getProfile() async {
-  final url = Uri.parse("$baseUrl/user_profile");
-  
-  try {
-    // Add authorization header if needed
-    final response = await http.get(
-      url,
-      headers: {
-        "Accept": "application/json",
-      },
-    );
+    final response = await http.get(url, headers: {
+      "Accept": "application/json",
+    });
 
     if (response.statusCode == 200) {
       final body = json.decode(response.body);
 
-      // Step 1: Verify response structure
       if (body is Map && body.containsKey("data") && body["data"] is Map) {
-        final Map<String, dynamic> userData = body["data"];
-
-        // Step 2: Format data to match ProfileScreen expectations
-        return {
-          "username": userData["username"] ?? "User",
-          "email": userData["email"] ?? "",
-          "dob": userData["dob"] ?? "",
-          "profession": userData["profession"] ?? "",
-          "address": userData["address"] ?? "",
-          "pincode": userData["pincode"]?.toString() ?? "", // Ensure string
-        };
+        final Map<String, dynamic> data = body["data"];
+        return data.entries.map<Map<String, dynamic>>((entry) {
+          final userData = entry.value;
+          return {
+            "name": userData["sender"],
+            "lastMessage": userData["message_text"],
+            "timestamp": userData["timestamp"],
+          };
+        }).toList();
       }
-      throw Exception("Invalid response format: Missing 'data' field");
+
+      throw Exception("Unexpected response format: $body");
     } else {
-      throw Exception("Failed to fetch profile: ${response.statusCode}");
+      throw Exception("Failed to fetch chat history: ${response.statusCode}");
     }
-  } catch (e) {
-    throw Exception("Network error: $e");
   }
-}
+
+  static Future<Map<String, dynamic>> getProfile() async {
+    final url = Uri.parse("$baseUrl/user_profile");
+    
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Accept": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+
+        if (body is Map && body.containsKey("data") && body["data"] is Map) {
+          final Map<String, dynamic> userData = body["data"];
+          return {
+            "username": userData["username"] ?? "User",
+            "email": userData["email"] ?? "",
+            "dob": userData["dob"] ?? "",
+            "profession": userData["profession"] ?? "",
+            "address": userData["address"] ?? "",
+            "pincode": userData["pincode"]?.toString() ?? "",
+          };
+        }
+        throw Exception("Invalid response format: Missing 'data' field");
+      } else {
+        throw Exception("Failed to fetch profile: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Network error: $e");
+    }
+  }
 }
