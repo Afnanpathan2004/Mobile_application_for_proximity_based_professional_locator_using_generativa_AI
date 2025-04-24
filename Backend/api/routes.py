@@ -24,6 +24,7 @@ client = MongoClient(os.getenv('mongo'))
 db = client["Mini_Project"]
 community_coll = db["Community"]
 Chat = db["Chat"]
+user_info = db["User_Auth"]
 
 # Register a new user
 @router.post("/register", status_code=201)
@@ -588,3 +589,52 @@ async def read_users_me(response:Response, access_token: str = Cookie(None)):
             }
 
     return {"message": "Chat history", "data": latest_messages_by_sender}
+
+# Route to get loggedin users info for profile screen
+@router.get("/user_profile")
+async def read_users_me(response:Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    # print(user)
+    if not user:
+        raise credentials_exception
+    # fetching the user  data from the database
+    info =  user_info.find_one(
+            {"username": username},
+            {
+                "_id": 0,
+                "username": 1,
+                "email": 1,
+                "dob": 1,
+                "profession": 1,
+                "address": 1,
+                "pincode": 1
+            }
+        )
+    return {"message": "User profile", "data": info}

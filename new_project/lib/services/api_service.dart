@@ -414,4 +414,43 @@ static Future<List<Map<String, dynamic>>> getChatHistory() async {
     throw Exception("Failed to fetch chat history: ${response.statusCode}");
   }
 }
+
+// API for getting profile info
+static Future<Map<String, dynamic>> getProfile() async {
+  final url = Uri.parse("$baseUrl/user_profile");
+  
+  try {
+    // Add authorization header if needed
+    final response = await http.get(
+      url,
+      headers: {
+        "Accept": "application/json",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final body = json.decode(response.body);
+
+      // Step 1: Verify response structure
+      if (body is Map && body.containsKey("data") && body["data"] is Map) {
+        final Map<String, dynamic> userData = body["data"];
+
+        // Step 2: Format data to match ProfileScreen expectations
+        return {
+          "username": userData["username"] ?? "User",
+          "email": userData["email"] ?? "",
+          "dob": userData["dob"] ?? "",
+          "profession": userData["profession"] ?? "",
+          "address": userData["address"] ?? "",
+          "pincode": userData["pincode"]?.toString() ?? "", // Ensure string
+        };
+      }
+      throw Exception("Invalid response format: Missing 'data' field");
+    } else {
+      throw Exception("Failed to fetch profile: ${response.statusCode}");
+    }
+  } catch (e) {
+    throw Exception("Network error: $e");
+  }
+}
 }

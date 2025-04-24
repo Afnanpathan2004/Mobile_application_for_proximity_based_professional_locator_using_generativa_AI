@@ -47,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _loadUserData() async {
     try {
-      final userData = await ApiService.getUserProfile();
+      final userData = await ApiService.getProfile();
       setState(() {
         _userData = userData;
         _isLoading = false;
@@ -197,75 +197,30 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 16),
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              children: [
-                                _buildProfileItem(
-                                  Icons.person_outline,
-                                  'Full Name',
-                                  '${_userData['first_name'] ?? ''} ${_userData['last_name'] ?? ''}',
-                                ),
-                                const Divider(height: 1, indent: 56),
-                                _buildProfileItem(
-                                  Icons.email_outlined,
-                                  'Email',
-                                  _userData['email'] ?? '',
-                                ),
-                                const Divider(height: 1, indent: 56),
-                                _buildProfileItem(
-                                  Icons.phone_outlined,
-                                  'Phone Number',
-                                  _userData['contact_number'] ?? '',
-                                ),
-                                const Divider(height: 1, indent: 56),
-                                _buildProfileItem(
-                                  Icons.cake_outlined,
-                                  'Date of Birth',
-                                  _userData['dob'] ?? '',
-                                ),
-                              ],
-                            ),
-                          ),
                           const SizedBox(height: 16),
                           Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 16),
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              children: [
-                                _buildProfileItem(
-                                  Icons.work_outline,
-                                  'Profession',
-                                  _userData['profession'] ?? '',
-                                ),
-                                const Divider(height: 1, indent: 56),
-                                _buildProfileItem(
-                                  Icons.home_outlined,
-                                  'Address',
-                                  _userData['address'] ?? '',
-                                ),
-                                const Divider(height: 1, indent: 56),
-                                _buildProfileItem(
-                                  Icons.location_on_outlined,
-                                  'Pincode',
-                                  _userData['pincode'] ?? '',
-                                ),
-                                const Divider(height: 1, indent: 56),
-                                _buildProfileItem(
-                                  Icons.location_city_outlined,
-                                  'City',
-                                  _userData['city'] ?? '',
-                                ),
-                              ],
-                            ),
-                          ),
+  margin: const EdgeInsets.symmetric(horizontal: 16),
+  elevation: 2,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: Column(
+    children: [
+      _buildProfileItem(Icons.person_outline, 'Username', _userData['username'] ?? ''),
+      const Divider(height: 1, indent: 56),
+      _buildProfileItem(Icons.email_outlined, 'Email', _userData['email'] ?? ''),
+      const Divider(height: 1, indent: 56),
+      _buildProfileItem(Icons.cake_outlined, 'Date of Birth', _userData['dob'] ?? ''),
+      const Divider(height: 1, indent: 56),
+      _buildProfileItem(Icons.work_outline, 'Profession', _userData['profession'] ?? ''),
+      const Divider(height: 1, indent: 56),
+      _buildProfileItem(Icons.home_outlined, 'Address', _userData['address'] ?? ''),
+      const Divider(height: 1, indent: 56),
+      _buildProfileItem(Icons.location_on_outlined, 'Pincode', _userData['pincode'] ?? ''),
+    ],
+  ),
+),
+
                           const SizedBox(height: 24),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
