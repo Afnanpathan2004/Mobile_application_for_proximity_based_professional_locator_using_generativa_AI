@@ -10,10 +10,12 @@ class ProfessionalProfileScreen extends StatefulWidget {
   const ProfessionalProfileScreen({super.key, required this.professional});
 
   @override
-  State<ProfessionalProfileScreen> createState() => _ProfessionalProfileScreenState();
+  State<ProfessionalProfileScreen> createState() =>
+      _ProfessionalProfileScreenState();
 }
 
-class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> with SingleTickerProviderStateMixin {
+class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -50,9 +52,12 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> w
   Future<void> _handleChat(BuildContext context) async {
     setState(() => _isLoading = true);
     try {
-      final chatHistory = await ApiService.fetchChatHistory(widget.professional['username']);
+      final chatHistory =
+          await ApiService.fetchChatHistory(widget.professional['username']);
+      // final name = widget.professional;
+      // debugPrint('widget prodfessional: $name');
       if (!mounted) return;
-      
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -130,8 +135,8 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> w
           appBar: AppBar(
             systemOverlayStyle: SystemUiOverlayStyle(
               statusBarColor: colorScheme.primary,
-              statusBarIconBrightness: colorScheme.brightness == Brightness.dark 
-                  ? Brightness.light 
+              statusBarIconBrightness: colorScheme.brightness == Brightness.dark
+                  ? Brightness.light
                   : Brightness.dark,
             ),
             title: Text(
@@ -241,7 +246,8 @@ class _ProfessionalProfileScreenState extends State<ProfessionalProfileScreen> w
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : () => _handleChat(context),
+                          onPressed:
+                              _isLoading ? null : () => _handleChat(context),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
                             foregroundColor: colorScheme.onPrimary,

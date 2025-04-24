@@ -1,11 +1,11 @@
 import 'dart:convert';
-
+import 'package:new_project/services/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'chatbot_screen.dart';
+import 'chat_screen.dart';
 
 class ChatHistoryScreen extends StatefulWidget {
   const ChatHistoryScreen({super.key});
@@ -14,7 +14,8 @@ class ChatHistoryScreen extends StatefulWidget {
   State<ChatHistoryScreen> createState() => _ChatHistoryScreenState();
 }
 
-class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTickerProviderStateMixin {
+class _ChatHistoryScreenState extends State<ChatHistoryScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   List<Map<String, dynamic>> _chatList = [];
@@ -33,6 +34,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
         curve: Curves.easeInOut,
       ),
     );
+    _animationController.forward();
     _loadChatHistory();
   }
 
@@ -44,29 +46,24 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
 
   Future<void> _loadChatHistory() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final chatData = prefs.getString('chat_history');
-      
-      if (chatData != null) {
-        final decoded = json.decode(chatData) as List;
-        setState(() {
-          _chatList = decoded.map((item) => Map<String, dynamic>.from(item)).toList();
-          _isLoading = false;
-        });
-        _animationController.forward();
-      } else {
-        setState(() => _isLoading = false);
-      }
+      final chatData = await ApiService.getChatHistory(); // Call API function
+      setState(() {
+        _chatList = chatData;
+        // debugPrint("Chat history loaded: $_chatList"); // Debug log
+        _isLoading = false; // Hide loading spinner
+      });
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showErrorSnackbar('Failed to load chat history');
+      debugPrint("Error loading chat history: $e"); // Handle error gracefully
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _deleteChat(int index) async {
     final deletedChat = _chatList[index];
     setState(() => _chatList.removeAt(index));
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('chat_history', json.encode(_chatList));
@@ -116,11 +113,14 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
     await prefs.setString('chat_history', json.encode(_chatList));
   }
 
-  Widget _buildChatItem(Map<String, dynamic> chat, int index) {
+  Widget _buildChatItem(
+      Map<String, dynamic> chat, int index, dynamic professional) {
     final theme = Theme.of(context);
-    final isRecent = DateTime.now().difference(
-      DateTime.parse(chat['timestamp'] ?? DateTime.now().toIso8601String())
-    ).inDays < 1;
+    final isRecent = DateTime.now()
+            .difference(DateTime.parse(
+                chat['timestamp'] ?? DateTime.now().toIso8601String()))
+            .inDays <
+        1;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
@@ -129,7 +129,7 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
         borderRadius: BorderRadius.circular(12),
       ),
       child: Dismissible(
-        key: Key(chat['id'] ?? UniqueKey().toString()),
+        key: UniqueKey(),
         direction: DismissDirection.endToStart,
         background: Container(
           alignment: Alignment.centerRight,
@@ -143,11 +143,17 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
         onDismissed: (direction) => _deleteChat(index),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () {
+          onTap: () async {
+            final chatHistory = await ApiService.fetchChatHistory(chat['name']);
+            // debugPrint("Chat history for ${chat['name']}: $chatHistory");
+            if (!mounted) return;
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ChatbotScreen(),
+                builder: (context) => ChatScreen(
+                  professional: chat['name'],
+                  chatHistory: chatHistory,
+                ),
               ),
             );
           },
@@ -194,7 +200,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
                   children: [
                     Text(
                       DateFormat('h:mm a').format(
-                        DateTime.parse(chat['timestamp'] ?? DateTime.now().toIso8601String()),
+                        DateTime.parse(chat['timestamp'] ??
+                            DateTime.now().toIso8601String()),
                       ),
                       style: TextStyle(
                         fontSize: 12,
@@ -204,7 +211,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
                     if (isRecent)
                       Container(
                         margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.greenAccent,
                           borderRadius: BorderRadius.circular(10),
@@ -226,11 +234,11 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
         ),
       ),
     ).animate().fadeIn(delay: (index * 50).ms).slideX(
-      begin: 0.5,
-      end: 0,
-      duration: 300.ms,
-      curve: Curves.easeOut,
-    );
+          begin: 0.5,
+          end: 0,
+          duration: 300.ms,
+          curve: Curves.easeOut,
+        );
   }
 
   @override
@@ -242,8 +250,8 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: colorScheme.primary,
-          statusBarIconBrightness: colorScheme.brightness == Brightness.dark 
-              ? Brightness.light 
+          statusBarIconBrightness: colorScheme.brightness == Brightness.dark
+              ? Brightness.light
               : Brightness.dark,
         ),
         title: const Text('Chat History'),
@@ -284,7 +292,11 @@ class _ChatHistoryScreenState extends State<ChatHistoryScreen> with SingleTicker
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: _chatList.length,
-                    itemBuilder: (context, index) => _buildChatItem(_chatList[index], index),
+                    itemBuilder: (context, index) {
+                      final professional = _chatList[index]['name'];
+                      return _buildChatItem(
+                          _chatList[index], index, professional);
+                    },
                   ),
                 ),
     );

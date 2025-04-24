@@ -6,7 +6,7 @@ import 'package:new_project/services/api_service.dart';
 import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
-  final Map<String, dynamic> professional;
+  final dynamic professional; 
   final List<dynamic> chatHistory;
   const ChatScreen({
     super.key,
@@ -26,6 +26,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
   List<Map<String, dynamic>> messages = [];
   bool _isSending = false;
   String get _currentUser => ApiService.loggedInUsername ?? 'You';
+  late Map<String, dynamic> _normalizedProfessional;
 
   @override
   void initState() {
@@ -34,6 +35,9 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    _normalizedProfessional = widget.professional is String
+        ? {'username': widget.professional}
+        : widget.professional;
     _initializeChat();
     _apiService.connectWebSocket();
     _apiService.listenForMessages(_onMessageReceived);
@@ -78,7 +82,8 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
           messages.add({
             'type': 'text',
             'message': message['message'].toString(),
-            'sender': message['sender']?.toString() ?? widget.professional['username'],
+            'sender': message['sender']?.toString() ?? _normalizedProfessional['username']
+,
           });
         });
       } else {
@@ -106,7 +111,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
     _scrollToBottom();
 
     try {
-      await _apiService.sendMessage(message, widget.professional['username']);
+      await _apiService.sendMessage(message, _normalizedProfessional['username']);
     } catch (e) {
       _showErrorSnackbar('Failed to send message');
     } finally {
@@ -239,7 +244,7 @@ class _ChatScreenState extends State<ChatScreen> with SingleTickerProviderStateM
               ? Brightness.light
               : Brightness.dark,
         ),
-        title: Text(widget.professional['username'] ?? 'Chat'),
+        title: Text(_normalizedProfessional['username'] ?? 'Chat'),
         centerTitle: true,
         backgroundColor: colorScheme.primary,
         elevation: 0,

@@ -382,4 +382,36 @@ class ApiService {
     throw Exception("Failed to fetch chat log: ${response.statusCode}");
   }
 }
+
+// API for getting the list of professionals contacted earlier by the user
+static Future<List<Map<String, dynamic>>> getChatHistory() async {
+  final url = Uri.parse("$baseUrl/chat_history");
+
+  final response = await http.get(url, headers: {
+    "Accept": "application/json",
+  });
+
+  if (response.statusCode == 200) {
+    final body = json.decode(response.body);
+
+    // ✅ Step 1: Ensure 'data' exists and is a Map, not a List
+    if (body is Map && body.containsKey("data") && body["data"] is Map) {
+      final Map<String, dynamic> data = body["data"];
+
+      // ✅ Step 2: Convert each entry to desired format
+      return data.entries.map<Map<String, dynamic>>((entry) {
+        final userData = entry.value;
+        return {
+          "name": userData["sender"],
+          "lastMessage": userData["message_text"],
+          "timestamp": userData["timestamp"],
+        };
+      }).toList();
+    }
+
+    throw Exception("Unexpected response format: $body");
+  } else {
+    throw Exception("Failed to fetch chat history: ${response.statusCode}");
+  }
+}
 }
