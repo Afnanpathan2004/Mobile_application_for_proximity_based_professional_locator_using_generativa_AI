@@ -173,7 +173,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> with SingleTickerProvider
           ),
           color: isMe 
               ? theme.colorScheme.primary.withOpacity(0.8)
-              : theme.colorScheme.surfaceVariant,
+              : theme.colorScheme.surfaceContainerHighest,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
             child: Text(

@@ -213,7 +213,7 @@ class _CommunityScreenState extends State<CommunityScreen> with SingleTickerProv
           // User Info Banner
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            color: colorScheme.surfaceContainerHighest.withOpacity(0.3),
             child: Row(
               children: [
                 CircleAvatar(
@@ -395,7 +395,7 @@ class _CommunityScreenState extends State<CommunityScreen> with SingleTickerProv
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.8),
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.8),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

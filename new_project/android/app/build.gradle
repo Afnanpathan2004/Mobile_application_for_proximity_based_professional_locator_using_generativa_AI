@@ -1,44 +1,246 @@
-plugins {
-    id "com.android.application"
-    id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
-    id "dev.flutter.flutter-gradle-plugin"
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
 }
 
-android {
-    namespace = "com.example.new_project"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')?.toInteger() ?: 1
+def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0.0'
+def flutterMinSdk = localProperties.getProperty('flutter.minSdkVersion')?.toInteger() ?: 23
+def flutterTargetSdk = localProperties.getProperty('flutter.targetSdkVersion')?.toInteger() ?: 34
 
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-parcelize'
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'com.google.firebase.firebase-perf'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+android {
+    namespace 'com.yourcompany.yourapp'
+    compileSdkVersion flutterTargetSdk
+
+    ndkVersion flutter.ndkVersion
+    
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = '17'
+        freeCompilerArgs += [
+            '-Xopt-in=kotlin.RequiresOptIn',
+            '-Xjvm-default=all'
+        ]
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+        main.res.srcDirs += 'src/main/res-features'
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.new_project"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        applicationId "com.yourcompany.yourapp"
+        minSdkVersion flutterMinSdk
+        targetSdkVersion flutterTargetSdk
+        versionCode flutterVersionCode
+        versionName flutterVersionName
+        
+        multiDexEnabled true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments clearPackageData: 'true'
+        
+        vectorDrawables.useSupportLibrary = true
+        resConfigs "en", "xxhdpi" // Keep only necessary languages and densities
+        
+        manifestPlaceholders = [
+            googleMapsApiKey: localProperties.getProperty('google.maps.key', ''),
+            firebaseCrashlyticsCollectionEnabled: "false" // Disabled in debug by default
+        ]
+        
+        buildConfigField "String", "BUILD_TIME", "\"${System.currentTimeMillis()}\""
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storePassword keystoreProperties['storePassword']
+            }
+        }
     }
 
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+            versionNameSuffix "-debug"
+            
+            // Disable Crashlytics and Performance Monitoring in debug
+            firebaseCrashlytics {
+                mappingFileUploadEnabled false
+            }
+            firebasePerformance {
+                instrumentationEnabled false
+            }
+            
+            manifestPlaceholders.firebaseCrashlyticsCollectionEnabled = "false"
         }
+
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            
+            ndk {
+                abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
+            }
+            
+            manifestPlaceholders.firebaseCrashlyticsCollectionEnabled = "true"
+        }
+    }
+
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            resValue "string", "app_name", "App Dev"
+            versionNameSuffix "-dev"
+        }
+        
+        staging {
+            dimension "environment"
+            applicationIdSuffix ".staging"
+            resValue "string", "app_name", "App Staging"
+            versionNameSuffix "-staging"
+        }
+        
+        prod {
+            dimension "environment"
+            resValue "string", "app_name", "App"
+        }
+    }
+
+    packagingOptions {
+        resources {
+            excludes += [
+                'META-INF/**',
+                '**/attach_hotspot_windows.dll',
+                'kotlin/**',
+                'okhttp3/**',
+                'org/**',
+                '**.properties',
+                '**.bin'
+            ]
+            pickFirsts += [
+                'lib/**/libc++_shared.so'
+            ]
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+        compose false // Enable if using Jetpack Compose
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+        ignoreWarnings true
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            returnDefaultValues = true
+        }
+        animationsDisabled = true
     }
 }
 
 flutter {
-    source = "../.."
+    source '../..'
+}
+
+dependencies {
+    // Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    
+    // AndroidX
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.activity:activity-ktx:1.8.2'
+    implementation 'androidx.fragment:fragment-ktx:1.6.2'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    
+    // UI
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    
+    // Firebase
+    implementation platform('com.google.firebase:firebase-bom:32.7.2')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-crashlytics-ktx'
+    implementation 'com.google.firebase:firebase-perf-ktx'
+    
+    // Play Services
+    implementation 'com.google.android.play:app-update-ktx:2.1.0'
+    implementation 'com.google.android.gms:play-services-base:18.3.0'
+    
+    // Desugaring
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.11.1'
+    testImplementation 'androidx.test:core:1.5.0'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3'
+    
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+}
+
+// Configure Spotless for code formatting
+spotless {
+    kotlin {
+        target '**/*.kt'
+        ktlint('0.50.0').userData([
+            'android': 'true',
+            'max_line_length': '120',
+            'disabled_rules': 'no-wildcard-imports'
+        ])
+        licenseHeaderFile rootProject.file('spotless/copyright.kt')
+    }
+    
+    format 'xml', {
+        target '**/*.xml'
+        prettier().config(['parser': 'xml', 'tabWidth': 4])
+    }
 }

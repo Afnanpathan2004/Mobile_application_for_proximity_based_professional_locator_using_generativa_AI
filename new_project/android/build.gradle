@@ -1,18 +1,120 @@
+buildscript {
+    ext {
+        // Keep versions in sync with Flutter's requirements
+        kotlin_version = '1.9.22'
+        gradle_version = '8.3.0'
+        
+        // AndroidX versions
+        androidx_core_version = '1.12.0'
+        lifecycle_version = '2.7.0'
+        desugar_jdk_libs_version = '2.0.4'
+        
+        // Firebase versions
+        google_services_version = '4.3.15'
+        firebase_crashlytics_version = '2.9.9'
+    }
+    
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradle_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.google.gms:google-services:$google_services_version"
+        classpath "com.google.firebase:firebase-crashlytics-gradle:$firebase_crashlytics_version"
+        
+        // NOTE: Removed secrets-gradle-plugin as it's not essential for most projects
+        // If you really need it, use the correct coordinates:
+        // classpath 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin:secrets-gradle-plugin:2.0.1'
+    }
+}
+
+plugins {
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'com.github.ben-manes.versions' version '0.50.0'
+    id 'org.jlleitschuh.gradle.ktlint' version '11.6.1'
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
+        
+        // Flutter engine repository
+        maven {
+            url "https://storage.googleapis.com/download.flutter.io"
+            content {
+                includeGroup "io.flutter"
+            }
+        }
     }
 }
 
-rootProject.buildDir = "../build"
+// Flutter plugin configuration
+def flutterProjectRoot = rootProject.projectDir.parentFile.toPath()
+def plugins = new Properties()
+def pluginsFile = new File(flutterProjectRoot.toFile(), '.flutter-plugins')
+if (pluginsFile.exists()) {
+    pluginsFile.withReader('UTF-8') { reader -> plugins.load(reader) }
+}
+
+plugins.each { name, path ->
+    def pluginDirectory = flutterProjectRoot.resolve(path).resolve('android').toFile()
+    if (pluginDirectory.exists()) {
+        include ":$name"
+        project(":$name").projectDir = pluginDirectory
+    }
+}
+
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
-    project.evaluationDependsOn(":app")
+    project.evaluationDependsOn(':app')
 }
 
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
+}
+
+ext {
+    androidx_appcompat_version = '1.6.1'
+    androidx_constraintlayout_version = '2.1.4'
+    androidx_multidex_version = '2.0.1'
+    material_version = '1.11.0'
+    play_services_version = '18.3.0'
+    junit_version = '4.13.2'
+    androidx_test_version = '1.5.2'
+    espresso_version = '3.5.1'
+}
+
+spotless {
+    kotlin {
+        target '**/*.kt'
+        ktlint('0.50.0').userData([
+            'android': 'true',
+            'max_line_length': '120',
+            'disabled_rules': 'no-wildcard-imports,annotation'
+        ])
+    }
+}
+
+ktlint {
+    android = true
+    ignoreFailures = false
+    disabledRules = ["no-wildcard-imports"]
+}
+
+// Simplified dependency updates configuration
+dependencyUpdates {
+    checkForGradleUpdate = true
+    outputFormatter = "plain"
+    rejectVersionIf {
+        ['alpha', 'beta', 'rc', 'cr', 'm', 'preview'].any { qualifier ->
+            it.candidate.version ==~ /(?i).*[.-]${qualifier}[.\d-]*/
+        }
+    }
 }
