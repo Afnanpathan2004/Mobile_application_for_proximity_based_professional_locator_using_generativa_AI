@@ -18,7 +18,7 @@ Professional Profiles: View details about listed professionals.
 Real-Time Chat: One-to-one messaging between users and professionals.
 
 
-### **Technology Stack **
+### **Technology Stack**
 
 
 Frontend	Flutter
