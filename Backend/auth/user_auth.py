@@ -104,3 +104,4 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
         "access_token": access_token,
         "token_type": "Bearer"
     }
+

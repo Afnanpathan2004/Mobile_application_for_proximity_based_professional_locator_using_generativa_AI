@@ -4,6 +4,7 @@ import 'package:new_project/services/api_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
+
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
 
@@ -13,6 +14,7 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen> with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _professionController = TextEditingController();

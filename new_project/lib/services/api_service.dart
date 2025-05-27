@@ -91,6 +91,7 @@ class ApiService {
     required String email,
     required String latitude,
     required String longitude,
+
   }) async {
     final url = Uri.parse('$baseUrl/register');
     final response = await http.post(

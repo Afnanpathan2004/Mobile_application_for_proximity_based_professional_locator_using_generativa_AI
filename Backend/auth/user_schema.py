@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime 
 
+
 # User schema for creating a new user
 class UserCreate(BaseModel):
     username: str
@@ -13,6 +14,7 @@ class UserCreate(BaseModel):
     email: str
     latitude : str
     longitude : str
+
 
 # User schema for the token response
 class Token(BaseModel):
@@ -34,3 +36,4 @@ class MessageSchema(BaseModel):
     receiver: str        
     message: str         
     timestamp: datetime 
+

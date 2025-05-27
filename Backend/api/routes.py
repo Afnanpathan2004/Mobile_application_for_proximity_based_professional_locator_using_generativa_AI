@@ -26,6 +26,8 @@ community_coll = db["Community"]
 Chat = db["Chat"]
 user_info = db["User_Auth"]
 
+
+
 # Register a new user
 @router.post("/register", status_code=201)
 async def register(user: UserCreate):
@@ -46,6 +48,7 @@ async def register(user: UserCreate):
         user.email,
         user.latitude,
         user.longitude,)
+
     return {"message": "User registered successfully"}
 
 
@@ -143,11 +146,11 @@ async def logout(response: Response, access_token: str = Cookie(None)):
     user = collection.find_one({"username": username})
     if not user:
         raise credentials_exception
+
     # Clear the access token cookie by setting it with an expired time
     response.delete_cookie("access_token")
     
     return {"message": "Successfully logged out"}
-
 
 # Search 
 @router.post("/search")

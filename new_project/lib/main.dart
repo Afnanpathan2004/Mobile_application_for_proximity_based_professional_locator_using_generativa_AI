@@ -8,6 +8,7 @@ import 'screens/chatbot_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/community_screen.dart';
 
+
 void main() {
   runApp(const MyApp());
 }
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
+
       initialRoute: '/home',
       routes: {
         '/': (context) => const MyHomePage(
@@ -76,3 +78,4 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
+
