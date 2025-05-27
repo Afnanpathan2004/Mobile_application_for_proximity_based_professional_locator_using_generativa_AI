@@ -1,138 +1,62 @@
-📍 Mobile application for proximity based professional locator using generativa AI
+**Mobile application for proximity based professional locator using generativa AI**
 
-A mobile application that connects users with nearby professionals—doctors, electricians, tutors, and more—through geolocation and machine learning-based recommendations.
+This is a mobile application built using Flutter and FastAPI that allows users to search and locate nearby professionals (like doctors, electricians, tutors, etc.) using real-time geolocation and filtering. The system provides a clean interface, real-time map-based discovery, and one-to-one communication between users and professionals.
 
-🔍 Overview:
+Key Features
 
-The Proximity-Based Professional Locator (PBPL) is a smart mobile application designed to simplify how users discover, connect, and interact with nearby professionals based on their location and preferences. It integrates Flutter (frontend), FastAPI (backend), MongoDB (database), and Random Forest Classifier (RFC) to deliver personalized and accurate professional suggestions in real-time.
+Search Nearby Professionals: Based on  geolocation.
 
-🚀 Features:
+Dynamic Filtering: Search by category, distance, and availability.
 
--🔎 Proximity-based search using GPS
+User Authentication: Basic login system.
 
--🤖 Machine learning-powered recommendations (RFC)
+Professional Profiles: View details about listed professionals.
 
--💬 In-app real-time chat and chatbot support
+Real-Time Chat: One-to-one messaging between users and professionals.
 
--🌐 Interactive UI with map and list views
+Technology Stack
+Component	Technology
+Frontend	Flutter
+Backend	FastAPI (Python)
+Api Google Gemeni
+Database	MongoDB
+Version Control  Git + GitHub
 
--🔐 Secure login/authentication (Google & OTP)
+Installation
 
--🌍 Multilingual & accessibility support
-
--⭐ Professional ratings and reviews
-
--📆 Predictive availability modeling
-
--📂 Professional profile management
-
-🎯 Objectives:
-
--Help users find professionals quickly based on real-time location and availability.
-
--Integrate ML algorithms to personalize search and prediction of availability.
-
--Streamline user experience with communication, scheduling, and future payment integration.
-
-🧠 Machine Learning Model:
-
-Algorithm: Random Forest Classifier
-
-Purpose: Predict and recommend the best professionals based on user behavior, preferences, and professional history.
-
-Data Handling: Includes preprocessing, NLP-based feature extraction, model training, and feedback-based continuous learning.
-
-🧱 Architecture
-
-User Interface (Flutter)
-
-     ↓
-     
-FastAPI Backend (Python)
-
-     ↓
-     
-Machine Learning Module (RFC)
-
-     ↓
-     
-MongoDB Database
-
-     ↓
-     
-Google Maps API & Geo-location Services
-
-🛠️ Tech Stack
-
--Layer	Technology
-
--Frontend	Flutter
-
--Backend	FastAPI (Python)
-
--Database	MongoDB
-
--APIs	google gemini
-
--Tools	Git, VS Code
-
-📸 Screenshots
-
-![WhatsApp Image 2025-05-27 at 21 31 13_47980fc9](https://github.com/user-attachments/assets/edbcfdff-4cb8-4fb1-bf62-39a1509f9c5d)
-
-![WhatsApp Image 2025-05-27 at 21 29 24_8d1a34c3](https://github.com/user-attachments/assets/c24bcb05-0277-43e4-b406-b8f2d5d820f5)
-
-![WhatsApp Image 2025-05-27 at 21 31 13_bcc0cd0f](https://github.com/user-attachments/assets/81e73f6f-9d8a-4225-b98c-ad1414b061a8)
-
-![WhatsApp Image 2025-05-27 at 21 31 13_490f545b](https://github.com/user-attachments/assets/7392c6a5-d1b6-4568-8356-98fc45b5bffe)
-
-![WhatsApp Image 2025-05-27 at 21 31 11_47407fa0](https://github.com/user-attachments/assets/e286306a-a94f-48ef-9a95-a6e00cc998b6)
-
-![WhatsApp Image 2025-05-27 at 21 31 14_f4061080](https://github.com/user-attachments/assets/bbe5b192-79eb-43bf-a5f3-c0b1c885c71c)
-
-
-
-
-
-
-🔮 Future Enhancements
-
-✅ Advanced smart search & auto-booking system
-
-🧠 Adaptive learning for better suggestions
-
-💬 Community features with moderation
-
-🤝 Integrated payment gateways
-
-🧾 Smart contracts & document storage
-
-📦 How to Run
+1.Clone the Repository
 
 ```
-Clone the repo
+git clone https://github.com/YourUsername/PBPL.git
+cd PBPL
 ```
-```
-git clone https://github.com/your-username/PBPL.git
-Install dependencies (backend)
 
+2.Install Backend Dependencies
 ```
-```
-cd backend/
+cd backend
 pip install -r requirements.txt
-Run the FastAPI server
 ```
+
+3.Run the Backend
 ```
 uvicorn main:app --reload
-Launch Flutter frontend
+```
 
+4.Run the Frontend
 ```
-```
-cd ../frontend/
+cd ../frontend
 flutter pub get
 flutter run
 ```
 
+Screenshot
 
-⚖️ License
-This project is under the MIT License – feel free to use, modify, and contribute!
+Login Page	Home Page	Search Results Map
+
+Professional Profile	Chat Interface	Chatbot Assistant
+
+(Make sure the /screenshots folder contains the correctly named image files.)
+
+License
+This project is licensed under the MIT License.
+
