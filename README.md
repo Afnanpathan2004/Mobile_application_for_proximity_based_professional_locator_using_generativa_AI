@@ -8,13 +8,21 @@ The Proximity-Based Professional Locator (PBPL) is a smart mobile application de
 🚀 Features:
 
 -🔎 Proximity-based search using GPS
+
 -🤖 Machine learning-powered recommendations (RFC)
+
 -💬 In-app real-time chat and chatbot support
+
 -🌐 Interactive UI with map and list views
+
 -🔐 Secure login/authentication (Google & OTP)
+
 -🌍 Multilingual & accessibility support
+
 -⭐ Professional ratings and reviews
+
 -📆 Predictive availability modeling
+
 -📂 Professional profile management
 
 🎯 Objectives:
