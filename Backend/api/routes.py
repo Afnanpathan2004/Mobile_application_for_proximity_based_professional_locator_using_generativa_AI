@@ -1,13 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie, Body
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from auth.user_auth import register_user, login_for_access_token, collection, ACCESS_TOKEN_EXPIRE_MINUTES
 from auth.jwt import verify_token, Secret_key, algo
-from auth.user_schema import UserCreate, Token
+from auth.user_schema import UserCreate, Token, Message, MessageSchema
+from Community.community import message_analysis, display_messages, update_DB
 from auth.jwt import oauth2, create_access_token
+from Chatbot.Chatbot_logic import get_chatbot_response, get_conversation_history
 from jose import JWTError, jwt
 from datetime import timedelta
+from pymongo import MongoClient
+import json
+from datetime import datetime, timedelta
+import asyncio
+from fastapi.websockets import WebSocket
+import os
 
 router = APIRouter()
+active_connections = {}
+
+# connecting Mongo
+client = MongoClient(os.getenv('mongo'))
+db = client["Mini_Project"]
+community_coll = db["Community"]
+Chat = db["Chat"]
+user_info = db["User_Auth"]
+
 
 
 # Register a new user
@@ -27,7 +45,10 @@ async def register(user: UserCreate):
         user.address,
         user.pincode,
         user.contact_number,
-        user.email,)
+        user.email,
+        user.latitude,
+        user.longitude,)
+
     return {"message": "User registered successfully"}
 
 
@@ -94,8 +115,529 @@ async def read_users_me(response:Response, access_token: str = Cookie(None)):
 
 # Logout
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(response: Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+
     # Clear the access token cookie by setting it with an expired time
     response.delete_cookie("access_token")
     
     return {"message": "Successfully logged out"}
+
+# Search 
+@router.post("/search")
+async def search(response:Response, query:str = Body(...), access_token: str = Cookie(None)):
+    query = query.lower()
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+    
+    # Extract user's current location (latitude, longitude)
+    user_location = user.get("location")
+    if not user_location:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User location not found",
+        )
+    
+    # MongoDB query to search for professionals of the given profession near the current user
+    search_results = collection.find(
+        {
+            "profession": query,  
+            "location": {
+                "$nearSphere": {
+                    "$geometry": {
+                        "type": "Point",
+                        "coordinates": [user_location["coordinates"][0], user_location["coordinates"][1]]  
+                    },
+                    "$maxDistance": 5000  
+                }
+            }
+        }
+    )
+    
+# Collect and return the search results
+    results = []
+    for result in search_results:
+        results.append({
+            "username": result["username"],
+            "profession": result["profession"],
+            "location": result["location"],
+            "address": result["address"],
+            "contact_number": result["contact_number"],
+        })
+    
+    return {"message": "Search results", "data": results}
+
+
+# Community Chat 
+@router.post("/community")
+async def community(response:Response, message_data: Message, access_token: str = Cookie(None) ):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+    
+    # Validate the message
+    if not message_data.message.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Message cannot be empty.",
+        )
+    sentiment = message_analysis(message_data.message)
+    # print(sentiment)
+    if sentiment == "negative":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Follow the community guidelines. Negative messages are not allowed."
+        )
+    # Store Message in MongoDB
+    message_entry = {
+        "username": username,
+        "message": message_data.message,
+        "timestamp": datetime.utcnow()
+    }
+    community_coll.insert_one(message_entry)
+    return  {"message": message_data.message, "sentiment": sentiment, "success": True}
+
+
+# Display Community Chat
+@router.get("/display_community")
+async def  community_load (response:Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception 
+    
+    # Update the Community DB
+    update_DB()
+    
+    # Display messages
+    community_dislpay_messages = display_messages()
+    return community_dislpay_messages
+
+
+
+# Real time chat
+
+# 1. Fetch Chat History
+@router.get("/chat/{professional_username}")
+async def get_chat(response: Response, professional_username: str, access_token: str = Cookie(None)):
+    """Fetch chat history between logged-in user and the selected professional."""
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+
+    chat = Chat.find_one({"$or": [
+        {"user 1": username, "user 2": professional_username},
+        {"user 1": professional_username, "user 2": username}
+    ]})
+    
+    if chat:
+        return {"messages": chat["messages"]}
+    
+    return {"messages": []}  # Return empty if no chat history
+
+
+# 2. Send Message
+@router.post("/chat/send")
+async def send_message(response: Response, message_data: MessageSchema, access_token: str = Cookie(None)):
+    """Send a message and update chat history."""
+    
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+
+    chat = Chat.find_one({"$or": [
+        {"user 1": username, "user 2": message_data.receiver},
+        {"user 1": message_data.receiver, "user 2": username}
+    ]})
+    
+    new_message = {
+        "text": message_data.message,
+        "timestamp": datetime.utcnow(),
+        "sender": username
+    }
+
+    if chat:
+        Chat.update_one({"_id": chat["_id"]}, {"$push": {"messages": new_message}, "$set": {"last_updated": datetime.utcnow()}})
+    else:
+        Chat.insert_one({
+            "user 1": username,
+            "user 2": message_data.receiver,
+            "messages": [new_message],
+            "last_updated": datetime.utcnow()
+        })
+    if message_data.receiver in active_connections:
+                await active_connections[message_data.receiver].send_text(
+                    json.dumps({"message": message_data.message, "sender": username, "receiver": message_data.receiver})
+                )    
+
+    return {"success": True, "message": "Message sent!"}
+
+
+# 3. Establish 1-1 Chat 
+@router.websocket("/chat/ws/{sender}")
+async def chat_ws(websocket: WebSocket, sender: str):
+    await websocket.accept()  # Accept the WebSocket connection
+    active_connections[sender] = websocket  # Store WebSocket connection for this receiver
+
+    try:
+        while True:
+            data = await websocket.receive_text()  # Receive data from client
+    except Exception as e:
+        print("Error:", e)  # Print any exceptions that occur
+    finally:
+        # Unregister the user when the WebSocket connection closes
+        active_connections.pop(sender, None)
+        await websocket.close()  # Close the WebSocket connection
+
+# Chatbot Api
+# To get the chat history of the user and the bot
+@router.get("/chat")
+async def chat_get(response:Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    if not user:
+        raise credentials_exception
+    convo_log = get_conversation_history(user['username'])
+    return convo_log
+
+# To send the message to the bot and get the response
+@router.post("/chat")
+async def chat_post(response: Response, chat_request: Message, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    # print('user details to be sent to chatbot logic backend',user['username'])
+    if not user:
+        raise credentials_exception
+    
+    # Get the user message from the request body
+    user_message = chat_request.message
+    
+    # Call the chatbot logic function
+    bot_response, convo_log = get_chatbot_response(user_message, user['username'])
+    
+    # Return the bot's response as JSON
+    return JSONResponse(content={"bot response": bot_response}), convo_log
+
+# Route to get professionals contacted in the past
+@router.get("/chat_history")
+async def read_users_me(response:Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    # print(user)
+    if not user:
+        raise credentials_exception
+    # fetching the opposite users from the chat collection
+    documents = Chat.find({
+    "$or": [
+        {"user 1": user['username']},
+        {"user 2": user['username']}
+            ]
+        })
+    
+    latest_messages_by_sender = {}
+    # Get the opposite users from the chat collection
+    for doc in documents:
+        for message in doc["messages"]:
+            sender = message["sender"]
+            if sender == user['username']:
+                continue
+            timestamp = message["timestamp"]
+            if sender not in latest_messages_by_sender or timestamp > latest_messages_by_sender[sender]["timestamp"]:
+                latest_messages_by_sender[sender] = {
+                "message_text": message["text"],
+                "sender": sender,
+                "timestamp": timestamp
+            }
+
+    return {"message": "Chat history", "data": latest_messages_by_sender}
+
+# Route to get loggedin users info for profile screen
+@router.get("/user_profile")
+async def read_users_me(response:Response, access_token: str = Cookie(None)):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing access token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    # print(f"Received token: {token}")
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    if access_token.startswith("Bearer "):
+        access_token = access_token[len("Bearer "):]
+    
+    try:
+        username = verify_token(access_token, credentials_exception)
+    except HTTPException as e:
+        if e.status_code == 401 and "expired" in str(e.detail):
+            # Attempt to refresh the token
+            new_access_token = await refresh_token()
+            # Optionally, set the new access token in the cookies
+            response.set_cookie(key="access_token", value=f"Bearer {new_access_token}", httponly=True, secure=True, samesite='lax')
+            username = verify_token(new_access_token, credentials_exception) 
+        else:
+            raise e
+    user = collection.find_one({"username": username})
+    # print(user)
+    if not user:
+        raise credentials_exception
+    # fetching the user  data from the database
+    info =  user_info.find_one(
+            {"username": username},
+            {
+                "_id": 0,
+                "username": 1,
+                "email": 1,
+                "dob": 1,
+                "profession": 1,
+                "address": 1,
+                "pincode": 1
+            }
+        )
+    return {"message": "User profile", "data": info}

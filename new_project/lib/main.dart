@@ -3,6 +3,11 @@ import 'screens/login_screen.dart'; // Import the Login screen
 import 'screens/registration_screen.dart'; // Import the Registration screen
 import 'screens/home_screen.dart'; // Import the Home screen
 import 'screens/dashboard.dart';
+import 'screens/aboutus_screen.dart';
+import 'screens/chatbot_screen.dart';
+import 'screens/profile_screen.dart';
+import 'screens/community_screen.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -19,15 +24,20 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      initialRoute: '/',
+
+      initialRoute: '/home',
       routes: {
         '/': (context) => const MyHomePage(
             title:
                 'Welcome to Professional locator!!!'), // Set the HomePage as the home screen
-        '/register': (context) => RegistrationScreen(),
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
-        '/dashboard': (context) => Dashboard(),
+        '/register': (context) => const RegistrationScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/dashboard': (context) => const Dashboard(),
+        '/aboutus': (context) => const AboutUs(),
+        '/chatbot': (context) => const ChatbotScreen(),
+        '/profile': (context) => const ProfileScreen(),
+        '/community': (context) => const CommunityScreen(), 
       },
     );
   }
@@ -68,3 +78,4 @@ class MyHomePage extends StatelessWidget {
     );
   }
 }
+
