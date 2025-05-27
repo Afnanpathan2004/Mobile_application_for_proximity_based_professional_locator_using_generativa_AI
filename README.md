@@ -14,12 +14,18 @@ Professional Profiles: View details about listed professionals.
 
 Real-Time Chat: One-to-one messaging between users and professionals.
 
-Technology Stack
+Technology Stack 
+
 Component	Technology
+
 Frontend	Flutter
-Backend	FastAPI (Python)
+
+Backend	FastAPI (Python
+
 Api Google Gemeni
+
 Database	MongoDB
+
 Version Control  Git + GitHub
 
 Installation
