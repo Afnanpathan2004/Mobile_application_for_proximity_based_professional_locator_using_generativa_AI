@@ -28,35 +28,53 @@ The Proximity-Based Professional Locator (PBPL) is a smart mobile application de
 🎯 Objectives:
 
 -Help users find professionals quickly based on real-time location and availability.
+
 -Integrate ML algorithms to personalize search and prediction of availability.
+
 -Streamline user experience with communication, scheduling, and future payment integration.
 
 🧠 Machine Learning Model:
 
 Algorithm: Random Forest Classifier
+
 Purpose: Predict and recommend the best professionals based on user behavior, preferences, and professional history.
+
 Data Handling: Includes preprocessing, NLP-based feature extraction, model training, and feedback-based continuous learning.
 
 🧱 Architecture
 
 User Interface (Flutter)
+
      ↓
+     
 FastAPI Backend (Python)
+
      ↓
+     
 Machine Learning Module (RFC)
+
      ↓
+     
 MongoDB Database
+
      ↓
+     
 Google Maps API & Geo-location Services
 
 🛠️ Tech Stack
 
 -Layer	Technology
+
 -Frontend	Flutter
+
 -Backend	FastAPI (Python)
+
 -Database	MongoDB
+
 -ML Model	Random Forest (Scikit-learn)
+
 -APIs	Google Maps API
+
 -Tools	Git, VS Code
 
 📸 Screenshots
@@ -79,8 +97,9 @@ Professional Profile	Chat	Chatbot
 
 📦 How to Run
 
+```
 Clone the repo
-
+```
 ```
 git clone https://github.com/your-username/PBPL.git
 Install dependencies (backend)
