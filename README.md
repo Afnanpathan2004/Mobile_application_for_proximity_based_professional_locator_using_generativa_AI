@@ -16,11 +16,9 @@ Real-Time Chat: One-to-one messaging between users and professionals.
 
 Technology Stack 
 
-Component	Technology
-
 Frontend	Flutter
 
-Backend	FastAPI (Python
+Backend	FastAPI (Python)
 
 Api Google Gemeni
 
