@@ -1,8 +1,11 @@
 **Mobile application for proximity based professional locator using generativa AI**
 
+
 This is a mobile application built using Flutter and FastAPI that allows users to search and locate nearby professionals (like doctors, electricians, tutors, etc.) using real-time geolocation and filtering. The system provides a clean interface, real-time map-based discovery, and one-to-one communication between users and professionals.
 
-### Key Features
+
+### **Key Features**
+
 
 Search Nearby Professionals: Based on  geolocation.
 
@@ -14,7 +17,9 @@ Professional Profiles: View details about listed professionals.
 
 Real-Time Chat: One-to-one messaging between users and professionals.
 
-### Technology Stack 
+
+### **Technology Stack **
+
 
 Frontend	Flutter
 
@@ -26,7 +31,9 @@ Database	MongoDB
 
 Version Control  Git + GitHub
 
-### Installation
+
+### **Installation**
+
 
 1.Clone the Repository
 
@@ -53,7 +60,10 @@ flutter pub get
 flutter run
 ```
 
-### Screenshot
+
+### **Screenshot**
+
+
 
 Login Page	Home Page	Search Results Map
 
@@ -61,6 +71,9 @@ Professional Profile	Chat Interface	Chatbot Assistant
 
 (Make sure the /screenshots folder contains the correctly named image files.)
 
+
 ### License
+
+
 This project is licensed under the MIT License.
 
