@@ -1,10 +1,12 @@
 📍 Mobile application for proximity based professional locator using generativa AI
 A mobile application that connects users with nearby professionals—doctors, electricians, tutors, and more—through geolocation and machine learning-based recommendations.
 
-🔍 Overview
+🔍 Overview:
+
 The Proximity-Based Professional Locator (PBPL) is a smart mobile application designed to simplify how users discover, connect, and interact with nearby professionals based on their location and preferences. It integrates Flutter (frontend), FastAPI (backend), MongoDB (database), and Random Forest Classifier (RFC) to deliver personalized and accurate professional suggestions in real-time.
 
-🚀 Features
+🚀 Features:
+
 -🔎 Proximity-based search using GPS
 -🤖 Machine learning-powered recommendations (RFC)
 -💬 In-app real-time chat and chatbot support
@@ -15,12 +17,14 @@ The Proximity-Based Professional Locator (PBPL) is a smart mobile application de
 -📆 Predictive availability modeling
 -📂 Professional profile management
 
-🎯 Objectives
+🎯 Objectives:
+
 -Help users find professionals quickly based on real-time location and availability.
 -Integrate ML algorithms to personalize search and prediction of availability.
 -Streamline user experience with communication, scheduling, and future payment integration.
 
-🧠 Machine Learning Model
+🧠 Machine Learning Model:
+
 Algorithm: Random Forest Classifier
 Purpose: Predict and recommend the best professionals based on user behavior, preferences, and professional history.
 Data Handling: Includes preprocessing, NLP-based feature extraction, model training, and feedback-based continuous learning.
@@ -38,6 +42,7 @@ MongoDB Database
 Google Maps API & Geo-location Services
 
 🛠️ Tech Stack
+
 -Layer	Technology
 -Frontend	Flutter
 -Backend	FastAPI (Python)
@@ -47,11 +52,13 @@ Google Maps API & Geo-location Services
 -Tools	Git, VS Code
 
 📸 Screenshots
+
 Registration	Dashboard	Nearby Results
 
 Professional Profile	Chat	Chatbot
 
 🔮 Future Enhancements
+
 ✅ Advanced smart search & auto-booking system
 
 🧠 Adaptive learning for better suggestions
