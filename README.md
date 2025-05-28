@@ -6,15 +6,15 @@ This is a mobile application built using Flutter and FastAPI that allows users t
 
 ### **Key Features**
 
-1.Search Nearby Professionals: Based on  geolocation.
+1. Search Nearby Professionals: Based on  geolocation.
 
-2.Dynamic Filtering: Search by category, distance, and availability.
+2. Dynamic Filtering: Search by category, distance, and availability.
 
-3.User Authentication: Basic login system.
+3. User Authentication: Basic login system.
 
-4.Professional Profiles: View details about listed professionals.
+4. Professional Profiles: View details about listed professionals.
 
-5.Real-Time Chat: One-to-one messaging between users and professionals.
+5. Real-Time Chat: One-to-one messaging between users and professionals.
 
 
 ### **Technology Stack**
@@ -34,25 +34,25 @@ Version Control  Git + GitHub
 ### **Installation**
 
 
-1.Clone the Repository
+1. Clone the Repository
 
 ```
 git clone https://github.com/YourUsername/PBPL.git
 cd PBPL
 ```
 
-2.Install Backend Dependencies
+2. Install Backend Dependencies
 ```
 cd backend
 pip install -r requirements.txt
 ```
 
-3.Run the Backend
+3. Run the Backend
 ```
 uvicorn main:app --reload
 ```
 
-4.Run the Frontend
+4. Run the Frontend
 ```
 cd ../frontend
 flutter pub get
@@ -88,7 +88,7 @@ flutter run
 
 ![WhatsApp Image 2025-05-27 at 21 31 14_1c968134](https://github.com/user-attachments/assets/32e1a637-1337-4420-a0d2-49fd8c49ab04)
 
-**chat  history **
+**Chat  history**
 
 ![WhatsApp Image 2025-05-27 at 21 31 11_5d6205a7](https://github.com/user-attachments/assets/56152f24-3756-4479-a854-8b91c6578fb2)
 
